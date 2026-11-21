@@ -9,7 +9,7 @@
 body{margin:0;background:var(--bg);color:var(--t);font:15px/1.5 var(--f,system-ui,sans-serif)}
 #app{max-width:780px;margin:0 auto;padding:12px}main{padding-bottom:110px}
 h1,h3{font-family:Spectral,Georgia,serif;margin:.2em 0}h1{font-size:26px}
-header{display:flex;justify-content:space-between;align-items:center;gap:8px}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px}#head{position:relative;z-index:2}
 button,input,select,textarea{font:inherit;color:inherit;background:var(--p);border:1px solid var(--l);border-radius:6px;padding:8px 10px}
 input,select,textarea{width:100%}textarea{resize:vertical}
 input:disabled,select:disabled,textarea:disabled{opacity:.65}
@@ -807,7 +807,7 @@ function head(){
  const ap=isHost?ps.flatMap(([i,p])=>['powers','traits','xa','xs'].flatMap(k=>(p.sheet?.[k]||[]).filter(x=>x.st=='pend').map(x=>({i,k,x,p})))):[];
  $('#head').innerHTML=`<header><h1>${esc(S.world.name||'Mesa Infinita')}</h1><span><button id=bst title=Configurações>⚙</button> <button id=rc title="Copiar ID">🔑 Sala <b>${room}</b></button></span></header>${S.err?`<div class="ib err">⚠ ${esc(S.err)}</div>`:''}
 <div>${ps.map(([i,p])=>{const s=p.sheet;return `<span class="chip ${p.on?'':'off'}">${s?.avatar?`<img src="${s.avatar}">`:''}${esc(lab(p))}${i==uid?' (você)':''}${s?` · Nv ${s.lvl} · ❤ ${s.hp}/${mx(s).hp} · ${esc(rn(s))} ${s.mana}/${mx(s).mp}`:''}${S.phase=='create'&&s?.ready?' ✔':''}</span>`}).join('')}</div>
-${S.phase=='create'?`<div class=ib>${isHost?`Fichas prontas: ${rdy}/${ps.length} <button id=bgo class=pri>Começar a narração</button>`:'Monte sua ficha e marque como pronta.'}</div>`:''}
+${S.phase=='create'?`<div class=ib>${isHost?`<div style="margin-bottom:8px">Fichas prontas: ${rdy}/${ps.length}</div><button id=bgo class=pri style="display:block;width:100%;padding:12px">Começar a narração</button>`:'Monte sua ficha e marque como pronta.'}</div>`:''}
 ${ap.map(a=>`<div class="ib ap"><b>${esc(lab(a.p))}</b> quer ${{powers:'o poder',traits:'a propriedade',xa:'o atributo',xs:'a perícia'}[a.k]} <b>${esc(a.x.n)}</b>${a.k=='powers'?` (nível ${a.x.lvl}, ${a.x.kind=='sup'?'suporte':'ataque'}, ${esc(a.x.stat)})`:''}<br><small>${esc(a.x.d)}</small><div class=btns><button class=pri data-ap="${a.i},${a.k},${a.x.id},1">Aprovar</button><button data-ap="${a.i},${a.k},${a.x.id},0">Recusar</button></div></div>`).join('')}
 <nav>${[['game','🎲 Jogo'],...(S.init&&!S.bmOff?[['map','🗺 Mapa']]:[]),['world','🌍 Mundo'],['sheet','📜 Ficha']].map(([k,n])=>`<button data-tab=${k} class="${tab==k?'on':''}">${ico(n)}</button>`).join('')}</nav>
 ${T&&isHost?`<button id=mpt style="width:100%">🗺 Mapa de batalha: ${S.bmOff?'DESLIGADO':'LIGADO'}</button>`:''}${!T?'':T.rolling?`<div class=ib>Iniciativa: ${Object.keys(T.rolls).length}/${Object.values(S.chars).filter(c=>c.own&&S.players[c.own]?.on).length} rolaram</div>`:`<div class=ib>${T.order.map((i,k)=>`<span class="chip ${k==T.turn?'cur':''}">${esc(cnm(i))} <i>${T.rolls[i]}</i></span>`).join('')}</div>`}`}
