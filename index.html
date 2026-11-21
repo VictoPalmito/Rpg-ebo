@@ -67,7 +67,7 @@ nav{display:flex;gap:6px;margin:8px 0}nav button{flex:1;border-radius:999px}nav 
 button.stt{position:relative;flex:none;overflow:hidden;padding:6px 12px}button.stt i{position:absolute;left:0;bottom:0;height:4px;background:var(--ko)}
 .spin{animation:rot 1s linear infinite}.pl{display:inline-block;animation:pl 1.2s ease-in-out infinite}.wob{display:inline-block;animation:wb 1.6s ease-in-out infinite}.flp{display:inline-block;animation:rot 2s steps(4) infinite}
 @keyframes pl{50%{transform:scale(1.3);opacity:.6}}@keyframes wb{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}
-#ld{position:fixed;top:10px;left:50%;transform:translate(-50%,-90px);z-index:30;display:flex;align-items:center;gap:10px;padding:8px 18px;background:var(--p);color:var(--a);border:1px solid var(--a);border-radius:999px;box-shadow:0 4px 20px #0008;transition:transform .35s cubic-bezier(.3,1.4,.5,1);overflow:hidden;pointer-events:none;white-space:nowrap}#ld.on{transform:translate(-50%,0)}#ld span{color:var(--t)}
+#ld{position:fixed;top:10px;left:50%;transform:translate(-50%,-90px);z-index:30;display:flex;align-items:center;gap:10px;padding:8px 18px;background:var(--p);color:var(--a);border:1px solid var(--a);border-radius:999px;box-shadow:0 4px 20px #0008;transition:transform .35s cubic-bezier(.3,1.4,.5,1);overflow:hidden;pointer-events:none;white-space:nowrap}#ld.on{transform:translate(-50%,0)}#ld button{pointer-events:auto;padding:2px 12px;border-radius:999px;font-size:13px;border-color:var(--ko);color:var(--ko);position:relative;z-index:1}#ld span{color:var(--t)}
 #ld i{position:absolute;left:0;bottom:0;height:3px;width:40%;background:var(--a);animation:sh 1.2s ease-in-out infinite}@keyframes sh{from{left:-40%}to{left:100%}}
 button.ldg{pointer-events:none;opacity:.75}button:hover:not(:disabled){transform:translateY(-1px)}
 .card,.log{background:color-mix(in srgb,var(--p) 80%,transparent);backdrop-filter:blur(5px)}
@@ -149,7 +149,7 @@ let uid=LS('uid');if(!uid)LS('uid',uid=Math.random().toString(36).slice(2,10));
 const PV={openai:{n:'OpenAI',u:'https://api.openai.com/v1'},openrouter:{n:'OpenRouter',u:'https://openrouter.ai/api/v1'},anthropic:{n:'Anthropic (Claude)'},gemini:{n:'Google Gemini'},groq:{n:'Groq',u:'https://api.groq.com/openai/v1'},mistral:{n:'Mistral',u:'https://api.mistral.ai/v1'},deepseek:{n:'DeepSeek',u:'https://api.deepseek.com/v1'},xai:{n:'xAI (Grok)',u:'https://api.x.ai/v1'},together:{n:'Together',u:'https://api.together.xyz/v1'},custom:{n:'Outro (compatível com OpenAI)'}};
 const VB=['Tecendo o destino','Consultando as lendas','Embaralhando o destino','Forjando a narrativa','Afiando as espadas','Computando','Quantificando','Carregando','Escrevendo','Invocando o narrador','Rolando dados no escuro','Acendendo as tochas'];
 let cfg=Object.assign({p:'openai',ks:{},m:'',u:'',ms:[],lv:4},LS('cfg')),nm=LS('nm')||'',tab='world',view='',peer,hc,isHost=false,room='',conns={},mkey='',built=false,rolling=false,lastPh=null,tt=null;
-let S={phase:'lobby',world:{name:'',desc:'',power:'',attrs:'Força: dano físico e façanhas\nAgilidade: reflexos, furtividade, mira\nMente: magia, conhecimento, percepção\nPresença: carisma e vontade',skills:'Furtividade\nPersuasão\nPercepção\nAtletismo\nLuta\nArcanismo',pts:10,perLvl:3,skPts:6,skPerLvl:2,freePw:2,freeTr:1,startLvl:1,pwPerLvl:1,trPerLvl:1,init:'Agilidade',adv:''},cards:[],players:{},log:[],init:null,pend:null,busy:false,ap:0,theme:'default',fx:null,err:'',chars:{}};
+let S={phase:'lobby',world:{name:'',desc:'',power:'',attrs:'Força: dano físico e façanhas\nAgilidade: reflexos, furtividade, mira\nMente: magia, conhecimento, percepção\nPresença: carisma e vontade',skills:'Furtividade\nPersuasão\nPercepção\nAtletismo\nLuta\nArcanismo',pts:10,perLvl:3,skPts:6,skPerLvl:2,freePw:2,freeTr:1,freeIt:3,startLvl:1,pwPerLvl:1,trPerLvl:1,init:'Agilidade',adv:''},cards:[],players:{},log:[],init:null,pend:null,busy:false,ap:0,theme:'default',fx:null,err:'',chars:{}};
 const MAXP=10;let NOCL=0;
 const K=()=>cfg.ks[cfg.p]||'',base=()=>cfg.p=='custom'?cfg.u.replace(/\/$/,''):PV[cfg.p].u;
 const toast=m=>{const t=$('#toast');t.textContent=m;t.className='on';clearTimeout(toast.i);toast.i=setTimeout(()=>t.className='',3500)};
@@ -649,7 +649,7 @@ const MU=(()=>{"use strict";
   }
 
   function parse(x){x=String(x||'').trim();const P=PRESETS[x];if(P)return{k:P.key,l:P.layers};const t=x.split(/[\s,]+/),k=KEY_ORDER.includes((t[0]||'').toUpperCase())?t.shift().toUpperCase():'A',l={};t.forEach(w=>{const m=w.toLowerCase().match(/^([a-z]+?)(\d)$/);if(m&&LAYER_DEFS.some(d=>d.id==m[1]))l[m[1]]=+m[2]/9});return{k,l}}
-  return{parse,
+  return{parse,st(){return ctx?ctx.state:'none'},
    go(on){if(on&&!started){buildEngine();started=true}if(!ctx)return;if(on&&ctx.state=='suspended')ctx.resume().catch(()=>{});setPlaying(on)},
    set(m){curKey=m.k;LAYER_DEFS.forEach(d=>setLayer(d.id,m.l[d.id]||0));applyKey()},
    vol(v){masterVol=v;if(master)master.gain.setTargetAtTime(v,ctx.currentTime,.3)}};
@@ -658,17 +658,35 @@ const MU=(()=>{"use strict";
 let musOn=0,musLast='';
 const TMS={forest:'G wind4 bells5 rain2',rain:'A rain8 drone3 wind2',desert:'D wind6 drone4 shimmer2',snow:'C wind5 pad4 shimmer3',dungeon:'E drone6 sub6 shimmer2',ocean:'D waves8 wind3 sub4',fire:'A drone5 sub6 arp4',city:'D pad3 bells3 arp4',night:'E drone4 pad3 bells3 shimmer3',storm:'A rain8 wind5 drone4 sub3',swamp:'E drone5 wind2 sub3 bells1',cave:'E drone5 sub5 shimmer3',volcano:'A drone6 sub7 wind3',mountain:'C wind7 pad3 shimmer2',tavern:'G pad4 bells3 arp3',arcane:'D pad4 shimmer5 arp4 bells2',space:'E drone4 pad4 shimmer5 sub2',sunset:'C pad5 bells3 wind2',haunted:'E drone4 shimmer4 wind4 bells2'},
 MUS=' MÚSICA: envie "mus" SÓ quando o clima mudar de verdade (nova cena, combate, calmaria), nunca a cada resposta. Formato: nota (C D E G A) + camadas com nível 0-9, ex.: "A rain8 wind3 drone4". Camadas: drone pad sub rain waves wind bells arp shimmer. Tenso/combate: sub, arp, drone altos; calmo: bells, pad; chuva/mar/vento só se o cenário tiver.';
-function musIn(r){const m=NR().mus;if(!m)return;let x=m==2&&typeof r.mus=='string'&&r.mus.trim().slice(0,80);if(!x&&TMS[r.theme])x=TMS[r.theme];if(x&&x!==S.mus)S.mus=x}
-function musSync(f){const on=ST.mus!==false&&NR().mus>0&&!!S.mus&&S.phase=='play';if(on){if(!musOn||f){MU.vol(+(ST.mvol??.4));MU.go(1);musOn=1}if(musLast!==S.mus){MU.set(MU.parse(S.mus));musLast=S.mus}}else if(musOn){MU.go(0);musOn=0}}
-document.addEventListener('pointerdown',()=>musSync(1),{once:true});
+function musIn(r){const m=NR().mus;if(!m)return;let x=m==2&&typeof r.mus=='string'&&r.mus.trim().slice(0,80);if(x&&!Object.keys(MU.parse(x).l||{}).length)x='';if(!x&&TMS[r.theme])x=TMS[r.theme];if(!x&&!S.mus)x=TMS[S.theme]||'A drone5 pad4 bells3';if(x&&x!==S.mus)S.mus=x}
+function musSync(f){const mm=S.mus||(S.phase=='play'?(TMS[S.theme]||'A drone5 pad4 bells3'):''),on=ST.mus!==false&&NR().mus>0&&!!mm&&S.phase=='play';if(on){if(!musOn||f){MU.vol(+(ST.mvol??.4));MU.go(1);musOn=1}if(musLast!==mm){MU.set(MU.parse(mm));musLast=mm}}else if(musOn){MU.go(0);musOn=0}}
+['pointerdown','touchend','keydown'].forEach(ev=>document.addEventListener(ev,()=>{if(musOn){if(MU.st()!='running')MU.go(1)}else musSync(1)},{passive:true}));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&musOn&&MU.st()!='running')MU.go(1)});
 document.addEventListener('input',e=>{const k=e.target.dataset?.nr;if(!k)return;const r=NRS.find(x=>x[0]==k),b=document.querySelector(`[data-nv=${k}]`);if(r&&b)b.textContent=r[5](+e.target.value)});
-async function ai(system,user,mt){try{return await ai1(system,user,mt,1)}catch(e){if(/temperature|max_tokens|max_completion|maxOutputTokens/i.test(e.message))return ai1(system,user,mt,0);throw e}}
-async function ai1(system,user,mt,x){const N=NR(),tk=!mt&&N.tok>0?N.tok:0,tp=x&&!mt?Math.round(N.tmp*(cfg.p=='anthropic'?1:1.4))/100:null;
+let AIC=null,RT=null;
+async function ai(system,user,mt,cb){const c=AIC=new AbortController();c._h=setTimeout(()=>{c._r='to';c.abort()},180000);
+ try{try{return await ai1(system,user,mt,1,cb)}catch(e){if(c._r)throw e;if(/temperature|max_tokens|max_completion|maxOutputTokens|reasoning|provider/i.test(e.message))return await ai1(system,user,mt,0,cb);throw e}}
+ catch(e){if(c._r=='stop')throw Error('Interrompido por você.');if(c._r=='to')throw Error('A IA ficou tempo demais sem responder (timeout). Toque em Repetir ou use um modelo mais rápido.');throw e}
+ finally{clearTimeout(c._h);clearTimeout(c._t);if(AIC===c)AIC=null}}
+async function sse(url,o,fn){const c=AIC,arm=ms=>{if(!c)return;clearTimeout(c._t);c._t=setTimeout(()=>{c._r='to';c.abort()},ms)};arm(90000);if(c)o.signal=c.signal;const r=await fetch(url,o);if(!r.ok){const d=await r.json().catch(()=>({}));throw Error(d.error?.message||JSON.stringify(d.error||d)||r.status)}
+ if(!/event-stream/.test(r.headers.get('content-type')||''))return await r.json();
+ const rd=r.body.getReader(),dc=new TextDecoder;let b='';
+ for(;;){const{done,value}=await rd.read();if(done)break;arm(30000);b+=dc.decode(value,{stream:true});let i;
+  while((i=b.indexOf('\n'))>=0){const l=b.slice(0,i).trim();b=b.slice(i+1);if(!l.startsWith('data:'))continue;const q=l.slice(5).trim();if(!q||q=='[DONE]')continue;let j;try{j=JSON.parse(q)}catch(e){continue}fn(j)}}
+ return null}
+async function ai1(system,user,mt,x,cb){const N=NR(),tk=!mt&&N.tok>0?N.tok:0,tp=x&&!mt?Math.round(N.tmp*(cfg.p=='anthropic'?1:1.4))/100:null;
  const m=cfg.m;if(!K()||!m)throw Error('configure provedor, chave e modelo em ⚙ Configurações → IA');
- const sa=[].concat(system).filter(Boolean);
- if(cfg.p=='anthropic')return(await jf('https://api.anthropic.com/v1/messages',{method:'POST',headers:AH(),body:JSON.stringify({model:m,max_tokens:(mt||tk||lv().mt)+(mapOn()?800:0),...(tp!=null?{temperature:tp}:{}),system:sa.map((t,i)=>i?{type:'text',text:t}:{type:'text',text:t,cache_control:{type:'ephemeral'}}),messages:[{role:'user',content:user}]})})).content.map(x=>x.text||'').join('');
- if(cfg.p=='gemini')return(await jf(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${K()}`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({systemInstruction:{parts:sa.map(text=>({text}))},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{...(tp!=null?{temperature:tp}:{}),...(tk?{maxOutputTokens:tk}:{})}})})).candidates[0].content.parts.map(x=>x.text||'').join('');
- return(await jf(base()+'/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+K(),'content-type':'application/json'},body:JSON.stringify({model:m,messages:[{role:'system',content:sa.join('\n')},{role:'user',content:user}],...(tp!=null?{temperature:tp}:{}),...(tk?{max_tokens:tk}:{})})})).choices[0].message.content}
+ const sa=[].concat(system).filter(Boolean);let acc='';const put=t=>{if(t){acc+=t;cb&&cb(acc)}};
+ if(cfg.p=='anthropic'){await sse('https://api.anthropic.com/v1/messages',{method:'POST',headers:AH(),body:JSON.stringify({model:m,stream:true,max_tokens:(mt||tk||lv().mt)+(mapOn()?800:0),...(tp!=null?{temperature:tp}:{}),system:sa.map((t,i)=>i?{type:'text',text:t}:{type:'text',text:t,cache_control:{type:'ephemeral'}}),messages:[{role:'user',content:user}]})},j=>{if(j.type=='content_block_delta')put(j.delta?.text);else if(j.type=='error')throw Error(j.error?.message||'erro na API')});return acc}
+ if(cfg.p=='gemini'){const th=/2\.5.*flash/i.test(m)?{thinkingConfig:{thinkingBudget:0}}:{};await sse(`https://generativelanguage.googleapis.com/v1beta/models/${m}:streamGenerateContent?alt=sse&key=${K()}`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({systemInstruction:{parts:sa.map(text=>({text}))},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{...th,...(tp!=null?{temperature:tp}:{}),...(tk?{maxOutputTokens:tk}:{})}})},j=>(j.candidates?.[0]?.content?.parts||[]).forEach(q=>put(q.text)));return acc}
+ const d=await sse(base()+'/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+K(),'content-type':'application/json'},body:JSON.stringify({model:m,stream:true,messages:[{role:'system',content:sa.join('\n')},{role:'user',content:user}],...(tp!=null?{temperature:tp}:{}),...(x?{max_tokens:(mt||tk||lv().mt)+(mapOn()?800:0)}:{}),...(x&&cfg.p=='openrouter'?{reasoning:{enabled:false},provider:{sort:'throughput'}}:{})})},j=>put(j.choices?.[0]?.delta?.content));
+ return d?d.choices[0].message.content:acc}
+/* ---------- Narração ao vivo (streaming) ---------- */
+let LIVE='';
+function stopAI(){if(AIC){AIC._r='stop';AIC.abort()}else if(S.busy&&isHost){S.busy=false;LIVE='';log('sys','⚠ Narração destravada à força.');sync()}}
+function retryAI(){if(!isHost||S.busy||!RT)return;const r=RT;RT=null;narrate(r.a,r.p,r.d)}
+function pnar(t){const m=/"narration"\s*:\s*"/.exec(t);if(!m)return'';const s=t.slice(m.index+m[0].length);let o='';for(let i=0;i<s.length;i++){const c=s[i];if(c=='"')break;if(c=='\\'){const n=s[i+1];if(n===undefined)break;if(n=='u'){const h=s.slice(i+2,i+6);if(h.length<4)break;o+=String.fromCharCode(parseInt(h,16));i+=5}else{o+=n=='n'?'\n':n=='t'?'\t':n;i++}}else o+=c}return o}
+function setLive(x){LIVE=x;const lg=$('#log');if(!lg||!x)return;document.querySelector('.typ')?.remove();let e=$('#live');if(!e){e=document.createElement('p');e.id='live';e.className='nar';lg.append(e)}e.textContent=x;lg.scrollTop=1e9}
 const SCH='{"narration":"","roll":{"kind":"check|dice","stat":"","skill":"","dc":14,"why":""},"hp":[{"who":"","delta":-3}],"mana":[{"who":"","delta":-2}],"xp":[{"who":"","n":50}],"items":[{"who":"","n":"","d":"","q":1}],"remove":[{"who":"","n":"","q":1}],"powers":[{"who":"","n":"","d":"","lvl":1,"stat":"","kind":"atk|sup","cost":2,"rng":4,"shape":"one|circle|cone|line|square","r":2,"el":"","dur":1}],"cards":[{"title":"","text":""}],"scene":false,"endscene":false,"say":[{"npc":"","text":"","color":"#c9a3ff"}],"status":[{"who":"","n":"","lvl":1,"turns":3,"dmg":2,"d":""}],"stdel":[{"who":"","n":""}],"attr":[{"who":"","n":"","delta":1}],"armor":[{"who":"","delta":1}],"theme":""}';
 const sys=()=>{const w=S.world,L=lv(),N=NR(),cs=L.cards?S.cards.slice(-L.cards):S.cards;
  const A=`Você é o narrador (mestre) de um RPG de mesa multiplayer em português do Brasil. Narre de forma vívida e concisa (${LEN[N.len]||L.nar}), nunca controle as ações dos personagens dos jogadores e chame-os pelo nome do personagem.
@@ -684,14 +702,14 @@ SAÍDA: SOMENTE JSON, apenas os campos necessários: ${N.mus==2?SCH.replace('"th
 function ctx(dup){
  const L=lv(),cp=(t,n)=>t&&!L.full&&t.length>n?t.slice(0,n)+'…':t||'',o=x=>Object.entries(x).filter(a=>a[1]).map(([k,v])=>k+' '+v).join(', ');
  const pl=Object.values(S.chars).filter(c=>c.own&&S.players[c.own]).map(c=>{const p={sheet:c,name:S.players[c.own].name},s=c,pw=s.powers.filter(x=>x.st=='ok'),tr=s.traits.filter(x=>x.st=='ok');
-  return `- ${lab(p)} (${p.name}${s.gender&&s.gender!='Outro'?', '+s.gender:''}; nv ${s.lvl}, XP ${s.xp}/${s.lvl*100}, CA ${calcCA(s)}, PV ${s.hp}/${mx(s).hp}, ${rn(s)} ${s.mana}/${mx(s).mp})${s.bio?': '+cp(s.bio,160):''}. Atr: ${o(s.attrs)}. Per: ${o(s.skills)||'-'}. Poderes: ${pw.map(x=>`${x.n} [nv ${x.lvl}, ${x.kind=='sup'?'sup':'atq '+dd(s,x.stat)}, ${x.stat}, ${x.cost}m]${x.d?' '+cp(x.d,70):''}`).join('; ')||'-'}. Prop: ${tr.map(x=>x.n+(x.d?': '+cp(x.d,70):'')).join('; ')||'-'}. Inv: ${s.inv.map(x=>`${x.q}× ${x.n}`).join(', ')||'-'}`}).join('\n'),T=S.init;
+  return `- ${lab(p)} (${p.name}${s.gender&&s.gender!='Outro'?', '+s.gender:''}; nv ${s.lvl}, XP ${s.xp}/${s.lvl*100}, CA ${calcCA(s)}, PV ${s.hp}/${mx(s).hp}, ${rn(s)} ${s.mana}/${mx(s).mp})${s.bio?': '+cp(s.bio,160):''}. Atr: ${o(s.attrs)}. Per: ${o(s.skills)||'-'}. Poderes: ${pw.map(x=>`${x.n} [nv ${x.lvl}, ${x.kind=='sup'?'sup':'atq '+dd(s,x.stat)}, ${x.stat}, ${x.cost}m]${x.d?' '+cp(x.d,70):''}`).join('; ')||'-'}. Prop: ${tr.map(x=>x.n+(x.d?': '+cp(x.d,70):'')).join('; ')||'-'}. Inv: ${s.inv.filter(x=>x.n).map(x=>`${x.q}× ${x.n}`).join(', ')||'-'}`}).join('\n'),T=S.init;
  const og=(T&&!T.rolling?`Iniciativa: ${T.order.map(i=>cnm(i)).join(' → ')}. Turno atual: ${cnm(T.order[T.turn])}.`:'')+bmCtx()+(NR().mus==2&&S.mus?'\nMúsica atual: '+S.mus:'');
  const ct=t=>L.cap&&t.length>L.cap?t.slice(0,L.cap)+'…':t,
  lg=(dup?S.log.slice(-L.h-1,-1):S.log.slice(-L.h)).map(l=>({nar:'Narrador: '+l.x,say:lab(S.players[l.w])+' diz: '+l.x,act:lab(S.players[l.w])+' age: '+l.x,roll:'Dado: '+l.x,npc:l.n+' diz: '+l.x}[l.k]||'')).filter(Boolean).map(ct).join('\n');
  return `PERSONAGENS:\n${pl}\n${og}\n\nHISTÓRICO:\n${lg}`}
 
 /* ---------- Lógica do jogo (só o mestre/host executa) ---------- */
-const sync=()=>{S.log=S.log.slice(-150);if(!S.init)S.bm=null;if(isHost){relink();if(room)saveRoom()}for(const c of Object.values(conns))c.open&&c.send({t:'S',S});render()};
+const sync=()=>{S.log=S.log.slice(-100);if(!S.init)S.bm=null;if(isHost){relink();if(room)saveRoom()}for(const c of Object.values(conns))c.open&&c.send({t:'S',S});render()};
 const tx=m=>isHost?handle(uid,m):hc?.open&&hc.send(m);
 const log=(k,x,o)=>S.log.push({k,x,...o});
 function startInit(){S.init={order:[],turn:0,rolling:true,rolls:{}};log('sys','⚔ Cena importante! Todos rolam a iniciativa.')}
@@ -701,7 +719,8 @@ function clean(u,n,o){ // o host é a autoridade: PV, mana, XP, nível e invent�
  o=Object.assign(newSheet(),o);const s={...o},h=u==uid;
  ['cname','gender','bio','avatar','ready','color','res'].forEach(k=>s[k]=n[k]);
  const f=free({...o,attrs:n.attrs,skills:n.skills});if(f[0]>=0&&f[1]>=0){s.attrs=n.attrs;s.skills=n.skills}
- ['powers','traits','xa','xs'].forEach(k=>s[k]=(n[k]||[]).map(x=>{const p=o[k].find(y=>y.id==x.id);return p&&p.st=='ok'&&!h?p:{...x,st:h?'ok':(p?.st||'pend')}}));
+ ['powers','traits','xa','xs'].forEach(k=>s[k]=(n[k]||[]).map(x=>{const p=o[k].find(y=>y.id==x.id);return p&&p.st=='ok'&&!h?p:{...x,st:h?'ok':(p?.st||'draft')}}));
+ if(h||!o.il){const lm=h?99:Math.max(0,+(S.world.freeIt??3)||0);s.inv=[...(o.inv||[]).filter(x=>!x.ini),...(n.inv||[]).filter(x=>x&&x.ini).slice(0,lm).map(x=>({id:String(x.id||rid()),n:String(x.n||'').slice(0,60),d:String(x.d||'').slice(0,300),q:Math.max(1,Math.min(99,+x.q||1)),ini:1}))]}
  return s}
 function handle(u,d){
  const P=S.players[u],T=S.init,h=u==uid;if(!P)return;
@@ -720,11 +739,12 @@ function handle(u,d){
   if(c){try{c.send({t:'kicked'})}catch(e){}setTimeout(()=>{try{c.close()}catch(e){}},400)}
   log('sys',nmk+' foi removido da sala.');chkInit()}
  else if(d.t=='say'&&(h||!P.no?.say))log('say',d.x,{w:u,ch:P.act});
- else if(d.t=='appr'&&h){const a=S.players[d.w]?.sheet?.[d.k],i=a?a.findIndex(x=>x.id==d.id):-1;if(i>=0){const n=a[i].n;if(d.ok)a[i].st='ok';else a.splice(i,1);log('sys',`${lab(S.players[d.w])}: ${n} — ${d.ok?'aprovado ✔':'recusado ✘'}`)}}
+ else if(d.t=='appr'&&h){const a=S.players[d.w]?.sheet?.[d.k],i=a?a.findIndex(x=>x.id==d.id):-1;if(i>=0){const n=a[i].n;a[i].st=d.ok?'ok':'no';log('sys',`${lab(S.players[d.w])}: ${n} — ${d.ok?'aprovado ✔':'recusado ✘ (pode enviar de novo)'}`)}}
+ else if(d.t=='sub'){const c=S.chars[d.id],x=c&&['powers','traits','xa','xs'].includes(d.k)&&(c[d.k]||[]).find(y=>y.id==d.x);if(x&&(h||c.own==u)&&(x.st=='draft'||x.st=='no'||!x.st)&&String(x.n||'').trim()){x.st=c.own==uid?'ok':'pend';if(x.st=='pend')log('sys',`${lab(S.players[c.own]||{name:'?'})} enviou “${x.n}” para aprovação`)}}
  else if(d.t=='act'&&P.sheet&&(h||!P.no?.act)&&S.phase=='play'&&!S.busy&&!S.pend&&(!T||(!T.rolling&&S.chars[T.order[T.turn]]?.own==u))){
   const ac=T&&!T.rolling?T.order[T.turn]:P.act,s=S.chars[ac]||P.sheet,pw=s.powers.find(x=>x.id==d.pw&&x.st=='ok'),it=s.inv.find(x=>x.n==d.it),rl=d.rl&&Number.isFinite(+d.rl.total)&&+d.rl.d>=1&&+d.rl.d<=20?{txt:String(d.rl.txt).slice(0,200),total:+d.rl.total}:null;
   if(pw&&pw.cost>s.mana){log('sys','Mana insuficiente para '+pw.n);return sync()}
-  if(pw)s.mana-=pw.cost;S.ap=pw&&!rl?pw.lvl:0;if(pw&&d.aim&&S.bm)aimFx(ac,pw,d.aim);
+  s.il=1;if(pw)s.mana-=pw.cost;S.ap=pw&&!rl?pw.lvl:0;if(pw&&d.aim&&S.bm)aimFx(ac,pw,d.aim);
   const full=(pw?`[poder ${pw.n}, nível ${pw.lvl}, ${pw.kind=='sup'?'suporte':'ataque, dano '+dd(s,pw.stat)}, atributo ${pw.stat}, custou ${pw.cost} mana: ${pw.d}] `:'')+(it?`[item ${it.n}: ${it.d}] `:'')+(rl?`[TESTE anexado pelo jogador: ${rl.txt}. Você define a CD, diz se passou e narra a consequência; não peça outra rolagem para esta ação.] `:'')+(d.x||'');
   if(rl)log('roll',rl.txt,{w:u});log('act',(pw?'⚡'+pw.n+' ':'')+(it?'🎒'+it.n+' ':'')+d.x,{w:u,t:full,ch:ac});return narrate(u,`${cnm(ac)} age: ${full}`,1)}
  else if(d.t=='roll'&&S.pend?.who==u&&!S.busy){const p=S.pend,ok=p.kind=='check'?d.total>=p.dc:null;S.pend=null;log('roll',d.txt,{w:u,ok});return narrate(u,`Resultado da rolagem de ${lab(P)}: ${d.txt}.${d.d==20?' (20 natural!)':d.d==1?' (1 natural!)':''}${ok===null?'':ok?' SUCESSO.':' FALHA.'} Narre a consequência.`,1)}
@@ -733,10 +753,12 @@ function handle(u,d){
  else if(d.t=='mv')bmMove(u,d);
  sync()}
 async function narrate(actor,prompt,dup){
- S.busy=true;S.err='';sync();
+ if(S.busy&&AIC)return;RT=null;S.busy=true;S.err='';sync();
  try{
-  const r0=await ai(sys(),ctx(dup)+'\n\n'+prompt),r=pj(r0)||{narration:(r0.match(/"narration"\s*:\s*"((?:[^"\\]|\\.)*)/)||[])[1]?.replace(/\\n/g,'\n').replace(/\\"/g,'"')||r0};
-  if(r.narration)log('nar',r.narration);
+  let ap=0;const T0=performance.now();let T1=0,lt0=0;const liveCb=t=>{if(!T1)T1=performance.now();const n=pnar(t),now=performance.now();if(!n||now-lt0<200)return;lt0=now;setLive(n);for(const c of Object.values(conns))c.open&&c.send({t:'L',x:n})};
+  const r0=await ai(sys(),ctx(dup)+'\n\n'+prompt,0,liveCb);if(!String(r0||'').trim())throw Error('A IA devolveu uma resposta vazia.');const r=pj(r0)||{narration:(r0.match(/"narration"\s*:\s*"((?:[^"\\]|\\.)*)/)||[])[1]?.replace(/\\n/g,'\n').replace(/\\"/g,'"')||r0};
+  if(r.narration){log('nar',r.narration);if(LIVE)NS=r.narration}
+  {const e=performance.now();toast(`IA: 1ª resposta ${T1?((T1-T0)/1000).toFixed(1):'?'}s · total ${((e-T0)/1000).toFixed(1)}s`)}ap=1;
   const num=(a,f)=>(a||[]).forEach(f),P=x=>who(x.who),cl=(v,m)=>Math.max(0,Math.min(m,v));
   const ch0=S.init&&!S.init.rolling?S.init.order[S.init.turn]:S.players[actor]?.act,as=S.chars[ch0]||S.players[actor]?.sheet;if(as?.stt)as.stt=as.stt.filter(y=>{if(y.dmg){as.hp=cl(as.hp-y.dmg,mx(as).hp);log('sys',`☠ ${cnm(ch0)} sofre ${y.dmg} de ${y.n}`);hit(actor)}return--y.t>0});
   num(r.hp,h=>{const p=P(h),s=p?.sheet;if(!s)return;const d=+h.delta||0;s.hp=cl(s.hp+d,mx(s).hp);if(d){log('sys',`${d<0?'💔':'💚'} ${lab(p)} ${d<0?'perdeu':'recuperou'} ${Math.abs(d)} de vida`);if(d<0)hit(Object.keys(S.players).find(i=>S.players[i]==p)||p.sheet.own)}});
@@ -755,8 +777,8 @@ async function narrate(actor,prompt,dup){
   if(r.roll&&actor){const q=r.roll,k=q.kind=='dice'?'dice':'check';S.pend={who:actor,ch:ch0,kind:k,stat:q.stat,skill:q.skill||'',dc:+q.dc||12,dice:k=='dice'?dd(S.chars[ch0]||S.players[actor].sheet,q.stat,q.skill):'',why:q.why||'',pb:k=='check'?S.ap:0};S.ap=0;log('req',k=='dice'?`ROLAGEM de ${S.pend.dice} — ${cnm(ch0)}: ${S.pend.why}`:`TESTE de ${S.pend.stat}${S.pend.skill?' + '+S.pend.skill:''} (CD ${S.pend.dc}) — ${cnm(ch0)} precisa rolar: ${S.pend.why}`)}
   else if(r.scene)startInit();
   else if(actor&&S.init&&!S.init.rolling)adv();
- }catch(e){S.err=em(e.message);log('sys','⚠ '+S.err)}
- S.busy=false;sync()}
+ }catch(e){S.err=em(e.message);log('sys','⚠ '+S.err);if(!ap)RT={a:actor,p:prompt,d:dup}}
+ LIVE='';S.busy=false;sync()}
 async function gen(){
  const idea=$('#idea').value.trim();if(!idea)return toast('Descreva a ideia do mundo.');LD='gen';ldUpdate();ldText();const gb=$('#gen'),gh=gb?.innerHTML;if(gb){gb.classList.add('ldg');gb.innerHTML=SPIN+' Gerando…'}
  try{const r=pj(await ai('Você cria mundos de RPG de mesa em português do Brasil. Responda SOMENTE JSON: {"name":"","desc":"ambientação do mundo","power":"sistema de poder","attrs":"uma linha por atributo, formato Nome: para que serve (4 a 6)","skills":"uma linha por perícia, formato Nome: para que serve (6 a 10)","pts":10,"perLvl":3,"skPts":6,"skPerLvl":2,"freePw":2,"freeTr":1,"init":"atributo usado na iniciativa"}','Ideia: '+idea,1800));
@@ -767,7 +789,7 @@ async function gen(){
 function mkRoom(id){LD='Abrindo a sala';ldUpdate();ldText();
  room=id||Math.random().toString(36).slice(2,8).toUpperCase();peer=new Peer('mesainf-'+room);
  peer.on('error',e=>{LD='';ldUpdate();e.type=='unavailable-id'?(id?toast('Sala já aberta em outra aba.'):mkRoom()):toast('Erro de conexão: '+e.type)});
- peer.on('open',()=>{LD='';ldUpdate();isHost=true;const sv=id&&(LS('rooms')||{})[id];if(sv){S=sv.S;S.busy=false;S.err='';Object.values(S.players).forEach(p=>p.on=false);S.players[uid]=S.players[uid]||{};Object.assign(S.players[uid],{name:nm,on:true});relink();if(!S.players[uid].sheet&&!Object.keys(S.chars).length)addChar(uid)}else{S.phase='setup';S.chars={};S.players[uid]={name:nm,on:true};addChar(uid)}enter()});
+ peer.on('open',()=>{LD='';ldUpdate();isHost=true;const sv=id&&(LS('rooms')||{})[id];if(sv){S=sv.S;S.world.freeIt??=3;S.busy=false;S.err='';Object.values(S.players).forEach(p=>p.on=false);S.players[uid]=S.players[uid]||{};Object.assign(S.players[uid],{name:nm,on:true});relink();if(!S.players[uid].sheet&&!Object.keys(S.chars).length)addChar(uid)}else{S.phase='setup';S.chars={};S.players[uid]={name:nm,on:true};addChar(uid)}enter()});
  peer.on('connection',c=>{
   c.on('data',d=>{
    if(d.t!='hi')return c.uid&&handle(c.uid,d);
@@ -781,7 +803,7 @@ function joinRoom(id){LD='Entrando na sala';ldUpdate();ldText();
  peer.on('error',e=>{LD='';ldUpdate();toast(e.type=='peer-unavailable'?'Sala não encontrada.':'Erro de conexão: '+e.type)});
  peer.on('open',()=>{hc=peer.connect('mesainf-'+room,{reliable:true});
   hc.on('open',()=>hc.send({t:'hi',uid,name:nm}));
-  hc.on('data',d=>{if(d.t=='err'){NOCL=1;LD='';ldUpdate();toast(d.m)}else if(d.t=='kicked'){NOCL=1;toast('Você foi removido da sala pelo mestre.');setTimeout(()=>location.reload(),2200)}else if(d.t=='S'){LD='';S=d.S;relink();built?render():enter()}});
+  hc.on('data',d=>{if(d.t=='err'){NOCL=1;LD='';ldUpdate();toast(d.m)}else if(d.t=='kicked'){NOCL=1;toast('Você foi removido da sala pelo mestre.');setTimeout(()=>location.reload(),2200)}else if(d.t=='L')setLive(d.x);else if(d.t=='S'){LD='';S=d.S;relink();if(LIVE){const ln=[...S.log].reverse().find(l=>l.k=='nar');if(ln)NS=ln.x;LIVE=''}built?render():enter()}});
   hc.on('close',()=>{if(!NOCL)toast('Conexão com a sala encerrada.')})})}
 
 /* ---------- Dados ---------- */
@@ -843,7 +865,7 @@ function render(f){
  else{const nw=mkey!=tab;m.innerHTML={world:worldHTML,sheet:sheetHTML,ai:aiHTML}[tab]();mkey=tab;if(nw)anim(m)}}
 const gameHTML=()=>`<div id=log class=log></div><div class=card><div id=st class=m></div>
 <div id=chs class=btns></div><div class=two style="margin:6px 0"><select id=pw></select><select id=it></select></div><div class=two style="margin:6px 0"><select id=ta></select><select id=ts></select></div><textarea id=tx rows=2 placeholder="O que você faz ou diz?"></textarea>
-<div class=btns><button id=bact class=pri><span class=ei>⚔</span> Agir</button><button id=bsay><span class=ei>💬</span> Falar</button><button id=bpass hidden><span class=ei>⏭</span> Passar turno</button></div></div>`;
+<div class=btns><button id=bact class=pri><span class=ei>⚔</span> Agir</button><button id=bsay><span class=ei>💬</span> Falar</button><button id=bretry hidden><span class=ei>↻</span> Repetir narração</button><button id=bpass hidden><span class=ei>⏭</span> Passar turno</button></div></div>`;
 const ANI=[['none','Nenhuma (aparece de uma vez)'],['type','Digitando'],['fade','Esvaindo (surge suave)'],['blur','Surgindo do desfoque'],['words','Palavra por palavra'],['rise','Subindo suavemente']];
 let TY=null,TI,NS,NSd=0;
 const anD=()=>{const v=+(ST.tsp??50);return{type:Math.max(4,80-v*.76),words:Math.max(15,220-v*2),fade:Math.max(250,1500-v*12)}};
@@ -853,11 +875,11 @@ const logHTML=l=>l.k=='nar'?`<p class=nar ${TY&&l.x===TY.x?'data-ty=1':''}>${TY&
 function gameUpdate(){
  const T=S.init,p=S.pend,play=S.phase=='play',me=S.players[uid],s=(T&&!T.rolling&&S.chars[T.order[T.turn]]?.own==uid?S.chars[T.order[T.turn]]:me.sheet)||newSheet(),turn=!T||(!T.rolling&&S.chars[T.order[T.turn]]?.own==uid),lg=$('#log');
  {const ln=[...S.log].reverse().find(l=>l.k=='nar');if(!NSd){NSd=1;NS=ln?.x}else if(ln&&ln.x!==NS){NS=ln.x;tyStart(ln.x)}}
- lg.innerHTML=(S.log.map(logHTML).join('')||'<p class=m>A narração começa quando o mestre iniciar.</p>')+(S.busy?`<p class=typ>${SPIN}<span id=vb>${VB[Math.random()*VB.length|0]}</span><span class=dots><b></b><b></b><b></b></span></p>`:'');lg.scrollTop=1e9;
+ lg.innerHTML=(S.log.slice(-80).map(logHTML).join('')||'<p class=m>A narração começa quando o mestre iniciar.</p>')+(S.busy?`<p class=typ>${SPIN}<span id=vb>${VB[Math.random()*VB.length|0]}</span><span class=dots><b></b><b></b><b></b></span></p>`:'');lg.scrollTop=1e9;
  if(S.busy&&!tt)tt=setInterval(()=>{const e=$('#vb');if(e)e.textContent=VB[Math.random()*VB.length|0]},1800);if(!S.busy&&tt){clearInterval(tt);tt=null}
  $('#st').textContent=!play?'Aguardando o início da narração.':S.busy?'O narrador está escrevendo…':p?(p.who==uid?'Role o dado!':'Aguardando '+lab(S.players[p.who])+' rolar.'):T?.rolling?'Cena importante: role a iniciativa.':turn?(T?'Seu turno — descreva sua ação.':'Descreva sua ação.'):'Turno de '+cnm(T.order[T.turn])+'. Você pode falar à vontade.';
- $('#bact').disabled=!(play&&!S.busy&&!p&&turn&&me.sheet&&!me.no?.act);$('#bsay').disabled=!!me.no?.say;const oc=Object.entries(S.chars).filter(([,c])=>c.own==uid);$('#chs').innerHTML=oc.length>1?oc.map(([i,c])=>`<button class="chip ${i==me.act?'sel':''}" data-use=${i}>${c.avatar?`<img src="${c.avatar}">`:`<span class=lt style="background:${c.color||'#f2b84b'}">${esc((c.cname||'?')[0])}</span>`}${esc(c.cname||'?')}</button>`).join(''):'';$('#bpass').hidden=!(T&&!T.rolling&&(S.chars[T.order[T.turn]]?.own==uid||isHost));
- const ok2=k=>(s[k]||[]).filter(x=>x.st=='ok'),A2='<option value="">🎲 Anexar teste…</option>'+[...attrs(),...ok2('xa')].map(x=>`<option value="${esc(x.n)}">Teste de ${esc(x.n)}</option>`).join(''),S2='<option value="">Sem perícia</option>'+[...skills(),...ok2('xs')].map(x=>`<option value="${esc(x.n)}">+ ${esc(x.n)}</option>`).join(''),pw=$('#pw'),it=$('#it'),a='<option value="">Sem poder</option>'+s.powers.filter(x=>x.st=='ok').map(x=>`<option value=${x.id} ${x.cost>s.mana?'disabled':''}>${esc(x.n)} (${x.cost} mana)</option>`).join(''),b='<option value="">Sem item</option>'+s.inv.map(x=>`<option value="${esc(x.n)}">${esc(x.n)} ×${x.q}</option>`).join('');
+ $('#bact').disabled=!(play&&!S.busy&&!p&&turn&&me.sheet&&!me.no?.act);{const br=$('#bretry');if(br)br.hidden=!(RT&&!S.busy&&isHost)}$('#bsay').disabled=!!me.no?.say;const oc=Object.entries(S.chars).filter(([,c])=>c.own==uid);$('#chs').innerHTML=oc.length>1?oc.map(([i,c])=>`<button class="chip ${i==me.act?'sel':''}" data-use=${i}>${c.avatar?`<img src="${c.avatar}">`:`<span class=lt style="background:${c.color||'#f2b84b'}">${esc((c.cname||'?')[0])}</span>`}${esc(c.cname||'?')}</button>`).join(''):'';$('#bpass').hidden=!(T&&!T.rolling&&(S.chars[T.order[T.turn]]?.own==uid||isHost));
+ const ok2=k=>(s[k]||[]).filter(x=>x.st=='ok'),A2='<option value="">🎲 Anexar teste…</option>'+[...attrs(),...ok2('xa')].map(x=>`<option value="${esc(x.n)}">Teste de ${esc(x.n)}</option>`).join(''),S2='<option value="">Sem perícia</option>'+[...skills(),...ok2('xs')].map(x=>`<option value="${esc(x.n)}">+ ${esc(x.n)}</option>`).join(''),pw=$('#pw'),it=$('#it'),a='<option value="">Sem poder</option>'+s.powers.filter(x=>x.st=='ok').map(x=>`<option value=${x.id} ${x.cost>s.mana?'disabled':''}>${esc(x.n)} (${x.cost} mana)</option>`).join(''),b='<option value="">Sem item</option>'+s.inv.filter(x=>x.n).map(x=>`<option value="${esc(x.n)}">${esc(x.n)} ×${x.q}</option>`).join('');
  [[pw,a],[it,b],[$('#ta'),A2],[$('#ts'),S2]].forEach(([e,h])=>{if(e.dataset.h!=h){const v=e.value;e.innerHTML=h;e.value=v;e.dataset.h=h}})}
 function worldHTML(){
  const w=S.world,H=isHost,d=H?'':'disabled',n=(k,l)=>`<label>${l}<input type=number data-w=${k} value=${w[k]} ${d}></label>`;
@@ -867,7 +889,7 @@ function worldHTML(){
 <label>Sistema de poder<textarea rows=4 data-w=power ${d}>${esc(w.power)}</textarea></label>
 <label>Atributos (um por linha — Nome: para que serve)<textarea rows=5 data-w=attrs ${d}>${esc(w.attrs)}</textarea></label>
 <label>Perícias (um por linha — Nome: para que serve)<textarea rows=5 data-w=skills ${d}>${esc(w.skills)}</textarea></label>
-<div class=two>${n('pts','Pontos de atributo iniciais')}${n('perLvl','Pontos de atributo por nível')}${n('skPts','Pontos de perícia iniciais')}${n('skPerLvl','Pontos de perícia por nível')}${n('freePw','Poderes grátis na criação')}${n('freeTr','Propriedades grátis na criação')}${n('pwPerLvl','Poderes extras por nível')}${n('trPerLvl','Propriedades extras por nível')}${n('startLvl','Nível inicial dos personagens')}</div>
+<div class=two>${n('pts','Pontos de atributo iniciais')}${n('perLvl','Pontos de atributo por nível')}${n('skPts','Pontos de perícia iniciais')}${n('skPerLvl','Pontos de perícia por nível')}${n('freePw','Poderes grátis na criação')}${n('freeTr','Propriedades grátis na criação')}${n('freeIt','Itens iniciais na criação')}${n('pwPerLvl','Poderes extras por nível')}${n('trPerLvl','Propriedades extras por nível')}${n('startLvl','Nível inicial dos personagens')}</div>
 <label>Atributo da iniciativa<input data-w=init value="${esc(w.init)}" ${d}></label>
 <label>Aventura inicial<textarea rows=3 data-w=adv ${d}>${esc(w.adv)}</textarea></label></div>
 ${H?pmHTML()+narHTML():''}<div class=card><h3>Cartões de mundo (memórias)</h3>${S.cards.map((c,i)=>`<div class=cd><input data-c="${i}.t" value="${esc(c.t)}" ${d}><textarea rows=2 data-c="${i}.x" ${d}>${esc(c.x)}</textarea>${H?`<button data-delc=${i}>remover</button>`:''}</div>`).join('')||'<p class=m>Nenhum cartão ainda. A IA também cria cartões durante o jogo.</p>'}
@@ -875,10 +897,10 @@ ${H?'<button id=addc>+ Cartão</button>':''}</div>${H&&S.phase=='setup'?'<button
 function sheetHTML(){
  if(S.phase=='setup')return '<div class=card><p class=m>A ficha libera quando o mestre iniciar a aventura.</p></div>';
  if(!S.chars[cid()])return `<div class=card><p class=m>Você está sem ficha (só observa).</p>${isHost||!S.players[uid].no?.mk?'<button data-nc>➕ Criar ficha</button>':''}</div>`;
- const vid=cid(),s=S.chars[vid],ro=!(s.own==uid||isHost),d=ro?'disabled':'',ok=x=>(x||[]).filter(y=>y.st=='ok'),A=[...attrs(),...ok(s.xa)],Sk=[...skills(),...ok(s.xs)],fr=free(s),m=mx(s),cr=S.phase=='create';
+ const vid=cid(),s=S.chars[vid],ro=!(s.own==uid||isHost),d=ro?'disabled':'',ok=x=>(x||[]).filter(y=>y.st=='ok'),A=[...attrs(),...ok(s.xa)],Sk=[...skills(),...ok(s.xs)],fr=free(s),m=mx(s),cr=S.phase=='create',fi=Math.max(0,+(S.world.freeIt??3)||0),ni=s.inv.filter(x=>x.ini).length,canI=!ro&&(isHost||!s.il);
  const bar=(l,v,x,c)=>`<div class=bar><span>${l} ${v}/${x}</span><i style="width:${Math.max(0,Math.min(100,v/x*100))}%;background:${c}"></i></div>`;
  const rows=(o,L,k)=>L.map(a=>`<div class=ar><div><b>${esc(a.n)}</b>${a.d?`<br><small class=m>${esc(a.d)}</small>`:''}</div><button data-a="${k}|${esc(a.n)}|-1" style="visibility:${ro||!cr?'hidden':'visible'}">−</button><span>${o[a.n]||0}</span><button data-a="${k}|${esc(a.n)}|1" style="visibility:${ro?'hidden':'visible'}">+</button></div>`).join('');
- const lk=x=>ro||(x.st=='ok'&&!isHost)?'disabled':'',stt=x=>`<small class=m>${x.st=='ok'?'✔ aprovado':'⏳ aguardando o mestre'}</small>`;
+ const lk=x=>ro||((x.st=='ok'||x.st=='pend')&&!isHost)?'disabled':'',stt=(x,k)=>`<small class=m>${{ok:'✔ aprovado',pend:'⏳ aguardando o mestre',no:'✘ recusado — ajuste e envie de novo',draft:'📝 rascunho (ainda não vai para a ficha pronta)'}[x.st||'draft']}</small>${!ro&&(x.st=='draft'||x.st=='no'||!x.st)?` <button class=pri data-sub="${k}|${x.id}" ${String(x.n||'').trim()?'':'disabled'}>✔ Pronto</button>`:''}`;
  const opt=(v,L)=>L.map(a=>`<option ${a.n==v?'selected':''}>${esc(a.n)}</option>`).join('');
  return `<div class=card><div class=btns style="margin:0 0 8px">${Object.entries(S.chars).map(([i,c])=>`<button data-v=${i} class="chip ${i==vid?'sel':''}">${esc(c.cname||'(sem nome)')}${c.own==uid?' ★':c.own?'':' ·livre'}</button>`).join('')}${isHost||!S.players[uid].no?.mk?'<button data-nc>➕ Ficha</button>':''}${isHost?`<select data-ow=${vid} style="flex:none;width:auto"><option value="">Livre</option>${Object.entries(S.players).map(([i,p])=>`<option value=${i} ${s.own==i?'selected':''}>${esc(p.name)}</option>`).join('')}</select><button data-dc=${vid}>🗑</button>`:''}</div>
 <div class=hd><label class=av>${s.avatar?`<img class=av src="${s.avatar}">`:'<span class=m>foto</span>'}${ro?'':'<input type=file id=avf accept="image/*" hidden>'}</label><div style="flex:1"><label>Nome do personagem<input data-s=cname value="${esc(s.cname)}" ${d}></label><label>Gênero<select data-gsel ${d}>${[...(gSel(s)?[]:['']),...GEN,'Outro'].map(x=>`<option value="${x}" ${x==gSel(s)?'selected':''}>${x||'Selecione…'}</option>`).join('')}</select>${gSel(s)=='Outro'?`<input data-s=gender placeholder="Digite o gênero" value="${s.gender=='Outro'?'':esc(s.gender)}" ${d}>`:''}</label></div></div>
@@ -887,15 +909,15 @@ function sheetHTML(){
 ${ro?'':`<p>Pontos livres — atributos: <b id=fa>${fr[0]}</b> · perícias: <b id=fs>${fr[1]}</b></p>`}</div>
 <div class=card><h3>🩸 Status</h3>${(s.stt||[]).map((x,i)=>`<button class=stt data-stt=${i}>${sti(x.n)}<i style="width:${x.t/x.max*100}%"></i></button>`).join('')||'<p class=m>Nenhum.</p>'}<p id=sti class=m></p></div>
 <div class=card><h3>💪 Atributos</h3>${rows(s.attrs,A,'attrs')}<h3>🎯 Perícias</h3>${rows(s.skills,Sk,'skills')}</div>
-<div class=card><h3>🧩 Atributos e perícias próprios</h3><p class=m style="margin:0"><small>Precisam da aprovação do mestre; aprovados, entram nas listas para você distribuir pontos.</small></p>${['xa','xs'].map(k=>(s[k]||[]).map((x,i)=>`<div class=cd><small class=m>${k=='xa'?'Atributo':'Perícia'}</small><input data-cx="${k}.${i}.n" placeholder="Nome" value="${esc(x.n)}" ${lk(x)}><textarea rows=2 data-cx="${k}.${i}.d" placeholder="Para que serve" ${lk(x)}>${esc(x.d)}</textarea>${stt(x)} ${ro?'':`<button data-del="${k}.${i}">remover</button>`}</div>`).join('')).join('')}${ro?'':'<button data-addx=xa>+ Atributo</button> <button data-addx=xs>+ Perícia</button>'}</div>
-<div class=card><h3>🧬 Propriedades</h3><p class=m style="margin:0"><small>Características únicas do corpo do personagem. Precisam da aprovação do mestre.</small></p>${s.traits.map((x,i)=>`<div class=cd><input data-tr="${i}.n" placeholder="Nome" value="${esc(x.n)}" ${lk(x)}><textarea rows=2 data-tr="${i}.d" placeholder="Como funciona" ${lk(x)}>${esc(x.d)}</textarea>${stt(x)} ${ro?'':`<button data-del="traits.${i}">remover</button>`}</div>`).join('')}${ro?'':'<button data-add=traits>+ Propriedade</button>'}</div>
+<div class=card><h3>🧩 Atributos e perícias próprios</h3><p class=m style="margin:0"><small>Toque em Pronto para enviar ao mestre; aprovados, entram nas listas para você distribuir pontos.</small></p>${['xa','xs'].map(k=>(s[k]||[]).map((x,i)=>`<div class=cd><small class=m>${k=='xa'?'Atributo':'Perícia'}</small><input data-cx="${k}.${i}.n" placeholder="Nome" value="${esc(x.n)}" ${lk(x)}><textarea rows=2 data-cx="${k}.${i}.d" placeholder="Para que serve" ${lk(x)}>${esc(x.d)}</textarea>${stt(x,k)} ${ro?'':`<button data-del="${k}.${i}">remover</button>`}</div>`).join('')).join('')}${ro?'':'<button data-addx=xa>+ Atributo</button> <button data-addx=xs>+ Perícia</button>'}</div>
+<div class=card><h3>🧬 Propriedades</h3><p class=m style="margin:0"><small>Características únicas do corpo do personagem. Toque em Pronto para enviar ao mestre aprovar ou recusar.</small></p>${s.traits.map((x,i)=>`<div class=cd><input data-tr="${i}.n" placeholder="Nome" value="${esc(x.n)}" ${lk(x)}><textarea rows=2 data-tr="${i}.d" placeholder="Como funciona" ${lk(x)}>${esc(x.d)}</textarea>${stt(x,'traits')} ${ro?'':`<button data-del="traits.${i}">remover</button>`}</div>`).join('')}${ro?'':'<button data-add=traits>+ Propriedade</button>'}</div>
 <div class=card><h3>⚡ Poderes</h3>${s.powers.map((x,i)=>`<div class=cd><div class=two><label>Nome<input data-pw="${i}.n" value="${esc(x.n)}" ${lk(x)}></label><label>Nível do poder<input type=number min=1 data-pw="${i}.lvl" value=${x.lvl} ${lk(x)}></label></div>
 <div class=two><label>Atributo usado<select data-pw="${i}.stat" ${lk(x)}>${opt(x.stat,A)}</select></label><label>Tipo<select data-pw="${i}.kind" ${lk(x)}><option value=atk ${x.kind=='atk'?'selected':''}>Ataque</option><option value=sup ${x.kind=='sup'?'selected':''}>Suporte (sem dano)</option></select></label></div>
 <div class=two>${x.kind=='atk'?`<label>Dano (automático pelo atributo)<input disabled value="${dd(s,x.stat)}"></label>`:'<span></span>'}<label>Custo<input type=number min=0 data-pw="${i}.cost" value=${x.cost} ${lk(x)}></label></div>
 <div class=two><label>Alcance (casas)<input type=number min=0 data-pw="${i}.rng" value=${x.rng??1} ${lk(x)}></label><label>Formato<select data-pw="${i}.shape" ${lk(x)}>${Object.entries(SHP).map(([k,v])=>`<option value=${k} ${(x.shape||'one')==k?'selected':''}>${v}</option>`).join('')}</select></label><label>Tamanho da área<input type=number min=1 data-pw="${i}.r" value=${x.r||1} ${lk(x)}></label><label>Elemento (cor no mapa)<input data-pw="${i}.el" value="${esc(x.el||'')}" placeholder="fogo, gelo…" ${lk(x)}></label></div><label>Duração no mapa (turnos)<input type=number min=1 data-pw="${i}.dur" value=${x.dur||1} ${lk(x)}></label>
-<label>O que faz<textarea rows=2 data-pw="${i}.d" ${lk(x)}>${esc(x.d)}</textarea></label>${stt(x)} ${ro?'':`<button data-del="powers.${i}">remover</button>`}</div>`).join('')}${ro?'':'<button data-add=powers>+ Poder</button>'}
+<label>O que faz<textarea rows=2 data-pw="${i}.d" ${lk(x)}>${esc(x.d)}</textarea></label>${stt(x,'powers')} ${ro?'':`<button data-del="powers.${i}">remover</button>`}</div>`).join('')}${ro?'':'<button data-add=powers>+ Poder</button>'}
 <p class=m><small>Poderes ${s.powers.length}/${lim(s,'powers')} · Propriedades ${s.traits.length}/${lim(s,'traits')} (nível ${s.lvl})</small></p></div>
-<div class=card><h3>🎒 Inventário</h3>${s.inv.map(x=>`<div class=cd><b>${x.q}× ${esc(x.n)}</b><br><small class=m>${esc(x.d)}</small></div>`).join('')||'<p class=m>Vazio. A IA entrega itens durante a aventura; use-os na aba Jogo.</p>'}</div>
+<div class=card><h3>🎒 Inventário</h3>${s.inv.filter(x=>!x.ini||!canI).map(x=>`<div class=cd><b>${x.q}× ${esc(x.n)}</b><br><small class=m>${esc(x.d)}</small></div>`).join('')}${canI?`<p class=m style="margin:6px 0 0"><small>Itens iniciais: ${ni}/${fi}. Escolha nome, quantidade e descrição.</small></p>${s.inv.filter(x=>x.ini).map(x=>`<div class=cd><div class=two><label>Item<input data-it="${x.id}|n" value="${esc(x.n)}"></label><label>Quantidade<input type=number min=1 max=99 data-it="${x.id}|q" value=${x.q||1}></label></div><label>Descrição<textarea rows=2 data-it="${x.id}|d">${esc(x.d)}</textarea></label><button data-delit="${x.id}">remover</button></div>`).join('')}<button data-addit>+ Item inicial</button>`:''}${!s.inv.length&&!canI?'<p class=m>Vazio. A IA entrega itens durante a aventura; use-os na aba Jogo.</p>':''}</div>
 ${cr&&!ro?`<button id=bready class="${s.ready?'':'pri'}" style="width:100%;padding:12px">${s.ready?'✔ Ficha pronta (clique para desfazer)':'Marcar ficha como pronta'}</button>`:''}`}
 const aiHTML=()=>`<div class=card><h3>🤖 Nível da IA: <span id=lvn></span></h3><div id=lvs><div class=lvt><div class=lvf></div><u style="left:0"></u><u style="left:25%"></u><u style="left:50%"></u><u style="left:75%"></u><u style="left:100%"></u><div class=lvh></div></div></div><small class=m id=lvd></small><br><small class=m id=lve></small></div><div class=card><label>Provedor<select data-cf=p>${Object.entries(PV).map(([k,v])=>`<option value=${k} ${cfg.p==k?'selected':''}>${v.n}</option>`).join('')}</select></label>
 ${cfg.p=='custom'?`<label>URL base (ex.: https://meu-servidor/v1)<input data-cf=u value="${esc(cfg.u)}"></label>`:''}
@@ -917,7 +939,7 @@ const cn=l=>S.chars[l.ch]?esc(S.chars[l.ch].cname||lab(S.players[l.w])||'?'):pn(
 const pmHTML=()=>`<div class=card><h3>👥 Jogadores e permissões</h3><label style="display:flex;align-items:center;gap:8px;margin:4px 0 2px"><input type=checkbox style="width:auto" data-lock ${S.locked?'checked':''}> 🔒 Trancar sala</label><small class=m>Trancada, ninguém novo consegue entrar (quem já está na sala pode reconectar).</small>${Object.entries(S.players).map(([i,p])=>`<div class=cd>${i==uid?'':`<button type=button data-kick=${i} style="float:right;padding:2px 10px">Expulsar</button>`}<b>${esc(p.name)}</b>${i==uid?' (mestre)':p.on?'':' <small class=m>· offline</small>'}<br>${[['mk','Criar ficha'],['say','Falar'],['act','Agir']].map(([k,l])=>`<label style="display:inline-block;margin-right:10px"><input type=checkbox style="width:auto" data-pm="${i}.${k}" ${p.no?.[k]?'':'checked'}> ${l}</label>`).join('')}</div>`).join('')}</div>`;
 const SPIN='<svg class=spin width=20 height=20 viewBox="0 0 24 24" fill=none stroke=currentColor stroke-width=3 stroke-linecap=round><circle cx=12 cy=12 r=9 opacity=.25></circle><path d="M12 3a9 9 0 0 1 9 9"></path></svg>';
 let LD='',lt=null;const GV=['Criando o mundo','Desenhando mapas','Inventando facções','Escrevendo lendas','Forjando atributos','Povoando as cidades'];
-function ldText(){const a=LD=='gen'?GV:LD?[LD]:VB;$('#ld').innerHTML=SPIN+'<span>'+a[Math.random()*a.length|0]+'…</span><i></i>'}
+function ldText(){const a=LD=='gen'?GV:LD?[LD]:VB,st=LD=='gen'||(!LD&&S.busy&&isHost),e=$('#ld'),t=e.querySelector('#ldt'),x=a[Math.random()*a.length|0]+'…';if(t&&!!e.querySelector('#bstop')==st){t.textContent=x;return}e.innerHTML=SPIN+'<span id=ldt>'+x+'</span>'+(st?'<button id=bstop type=button>■ Parar</button>':'')+'<i></i>'}
 function ldUpdate(){const on=LD||S.busy,e=$('#ld');if(!e)return;e.className=on?'on':'';if(on){if(!lt)lt=setInterval(()=>(LD||S.busy)&&ldText(),1800);if(!e.innerHTML)ldText()}else if(lt){clearInterval(lt);lt=null;e.innerHTML=''}}
 const resSel=s=>{const r=s.res||'Mana';return PRES.includes(r)?r:'Outro'},GEN=['Masculino','Feminino'],gSel=s=>!s.gender?'':GEN.includes(s.gender)?s.gender:'Outro';
 const PRES=['Mana','Estamina','Energia','Ki','Fúria'],rn=s=>!s.res?'Mana':s.res=='Outro'?'Energia':s.res,ico=n=>{const i=n.indexOf(' ');return `<span class=ei>${n.slice(0,i)}</span>${n.slice(i)}`},anim=m=>{m.classList.remove('fd');void m.offsetWidth;m.classList.add('fd')};
@@ -1235,7 +1257,7 @@ document.addEventListener('click',async e=>{
  const b=e.target.closest('button');if(!b)return;const id=b.id,d=b.dataset;
  if(d.crp!==undefined)return crpClick(d);if(d.cp!==undefined)return cpOpen(d.cp,d.cl,d.cv);if(d.cpc!==undefined||d.cpx!==undefined)return cpClick(d);
  snd(d.v||d.tab||d.sc||d.use?'sel':'click');if(d.sc){scat=d.sc;stRender();return}if(d.tsnd!==undefined){['sel','hit','heal','crit','lvl'].forEach((k,i)=>setTimeout(()=>snd(k),i*600));return}
- if(id=='bst')return openSt();if(id=='bcl')return $('#stp').remove();if(/^mp[a-z]$/.test(id)||d.ms!==undefined)return mpClick(id,d);
+ if(id=='bstop')return stopAI();if(id=='bretry')return retryAI();if(id=='bst')return openSt();if(id=='bcl')return $('#stp').remove();if(/^mp[a-z]$/.test(id)||d.ms!==undefined)return mpClick(id,d);
  if(d.kick)return await ask('Expulsar '+(S.players[d.kick]?lab(S.players[d.kick]):'este jogador')+' da sala?')&&tx({t:'kick',w:d.kick});if(d.use)return tx({t:'use',id:d.use});if(d.nc!==undefined)return tx({t:'newc'});if(d.dc)return await ask('Apagar esta ficha?')&&tx({t:'delc',id:d.dc});
  if(d.stt!==undefined){const x=(S.players[view]?.sheet||sheet()).stt[+d.stt];$('#sti').textContent=x?`${x.n} · nível ${x.lvl} · ${x.t} turno(s) restante(s)${x.dmg?' · '+x.dmg+' de dano/turno':''}${x.d?' — '+x.d:''}`:'';return}
  if(d.rs){nm=$('#nm').value.trim()||nm;if(!nm)return toast('Digite seu nome.');LS('nm',nm);return mkRoom(d.rs)}
@@ -1253,15 +1275,18 @@ document.addEventListener('click',async e=>{
  else if(id=='bend'){S.init=null;sync()}
  else if(id=='gen')gen()
  else if(id=='bstart'){Object.values(S.players).forEach(p=>{const s=p.sheet,l=Math.max(1,+S.world.startLvl||1);if(s){s.lvl=l;s.hp=mx(s).hp;s.mana=mx(s).mp}});S.phase='create';sync()}
- else if(id=='bgo'){S.phase='play';S.init=null;narrate(null,'Comece a aventura com a cena de abertura, apresentando os personagens.')}
+ else if(id=='bgo'){Object.values(S.chars).forEach(c=>c.il=1);S.phase='play';S.init=null;narrate(null,'Comece a aventura com a cena de abertura, apresentando os personagens.')}
  else if(id=='bready'){const s=sheet();s.ready=!s.ready;save(1)}
  else if(d.ap){const[w,k,i,ok]=d.ap.split(',');tx({t:'appr',w,k,id:i,ok:+ok})}
  else if(id=='addc'){S.cards.push({t:'Novo cartão',x:''});sync();render(1)}
  else if(d.delc){S.cards.splice(+d.delc,1);sync();render(1)}
  else if(id=='loadm'){LD='Carregando modelos';ldUpdate();ldText();try{cfg.ms=await listModels();if(!cfg.ms.includes(cfg.m))cfg.m=cfg.ms[0]||'';LS('cfg',cfg);stRender();toast(cfg.ms.length+' modelos carregados')}catch(e){toast('Erro: '+e.message)}LD='';ldUpdate()}
  else if(d.a){if(!e.detail&&stepA(b))save()}
- else if(d.add){const s=sheet(),k=d.add,lm=lim(s,k);if(S.phase=='create'&&s[k].length>=lm)return toast(`Limite do nível ${s.lvl}: ${lm}.`);s[k].push(k=='powers'?{id:rid(),n:'',d:'',lvl:1,stat:attrs()[0]?.n||'',kind:'atk',dice:'1d8',cost:1,rng:1,shape:'one',r:1,el:'',dur:1,st:'pend'}:{id:rid(),n:'',d:'',st:'pend'});save(1)}
- else if(d.addx){const s=sheet();(s[d.addx]=s[d.addx]||[]).push({id:rid(),n:'',d:'',st:'pend'});save(1)}
+ else if(d.sub){const[k,i]=d.sub.split('|');tx({t:'sub',id:cid(),k,x:i})}
+ else if(d.addit!==undefined){const s=sheet(),n=s.inv.filter(x=>x.ini).length,f=Math.max(0,+(S.world.freeIt??3)||0);if(!isHost&&n>=f)return toast(`Limite de itens iniciais: ${f}.`);s.inv.push({id:rid(),n:'',d:'',q:1,ini:1});save(1)}
+ else if(d.delit){const s=sheet();s.inv=s.inv.filter(y=>y.id!=d.delit);save(1)}
+ else if(d.add){const s=sheet(),k=d.add,lm=lim(s,k);if(S.phase=='create'&&s[k].length>=lm)return toast(`Limite do nível ${s.lvl}: ${lm}.`);s[k].push(k=='powers'?{id:rid(),n:'',d:'',lvl:1,stat:attrs()[0]?.n||'',kind:'atk',dice:'1d8',cost:1,rng:1,shape:'one',r:1,el:'',dur:1,st:'draft'}:{id:rid(),n:'',d:'',st:'draft'});save(1)}
+ else if(d.addx){const s=sheet();(s[d.addx]=s[d.addx]||[]).push({id:rid(),n:'',d:'',st:'draft'});save(1)}
  else if(d.del){const[k,i]=d.del.split('.');sheet()[k].splice(+i,1);save(1)}
 });
 document.addEventListener('change',e=>{
@@ -1279,6 +1304,7 @@ document.addEventListener('change',e=>{
  else if(d.w){S.world[d.w]=v;sync()}
  else if(d.c){const[i,f]=d.c.split('.');S.cards[i][f]=v;sync()}
  else if(d.s){sheet()[d.s]=(d.s=='res'||d.s=='gender')&&!String(v).trim()?'Outro':v;save()}
+ else if(d.it){const[id,f]=d.it.split('|'),x=sheet().inv.find(y=>y.id==id);if(x&&x.ini){x[f]=f=='q'?Math.max(1,Math.min(99,+v||1)):v;save()}}
  else if(d.pw||d.tr){const[i,f]=(d.pw||d.tr).split('.');sheet()[d.pw?'powers':'traits'][i][f]=v;save(f=='kind')}
  else if(d.cf){if(d.cf=='k')cfg.ks[cfg.p]=v;else{cfg[d.cf]=v;if(d.cf=='p'){cfg.ms=[];cfg.m=''}}LS('cfg',cfg);if(d.cf=='p')stRender()}
 });
