@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mesa Infinita — RPG narrado por IA</title>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+:root{--bg:#121a24;--p:#1b2735;--l:#2f4156;--t:#e6e2d6;--m:#8a9aab;--a:#f2b84b;--ok:#6fcf97;--ko:#eb6b5e}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--t);font:15px/1.5 system-ui,sans-serif}
+#app{max-width:780px;margin:0 auto;padding:12px}
+h1,h3{font-family:Spectral,Georgia,serif;margin:.2em 0}h1{font-size:26px}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px}
+button,input,select,textarea{font:inherit;color:inherit;background:var(--p);border:1px solid var(--l);border-radius:6px;padding:8px 10px}
+input,select,textarea{width:100%}textarea{resize:vertical}
+button{cursor:pointer}button:hover:not(:disabled){border-color:var(--a)}button:disabled{opacity:.4;cursor:default}
+button.pri{background:var(--a);color:#1a1205;border-color:var(--a);font-weight:600}
+label{display:block;margin:8px 0;color:var(--m);font-size:13px}label>*{margin-top:3px;color:var(--t)}
+.card{background:var(--p);border:1px solid var(--l);border-radius:10px;padding:12px;margin:10px 0}
+.card input,.card textarea,.card select{background:var(--bg)}
+.m{color:var(--m)}.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+nav{display:flex;gap:6px;margin:8px 0}nav button{flex:1;border-radius:999px}nav .on{border-color:var(--a);color:var(--a)}
+.chip{display:inline-block;padding:2px 10px;border:1px solid var(--l);border-radius:999px;font-size:13px;margin:2px}
+.chip.off{opacity:.4}.chip.cur{background:var(--a);color:#1a1205;border-color:var(--a);font-weight:600}
+.ib{margin:8px 0;padding:6px;border:1px dashed var(--a);border-radius:8px;text-align:center}
+.log{height:50vh;overflow:auto;background:var(--p);border-radius:10px;padding:6px 14px}
+.log p{margin:.7em 0}
+.nar{font:17px/1.6 Spectral,Georgia,serif;white-space:pre-wrap;border-left:3px solid var(--a);padding-left:10px}
+.act{color:#8fd3c8}.say{color:var(--t)}
+.rl{font-size:13px;background:var(--bg);border-radius:6px;padding:4px 8px;display:inline-block}.rl.ok{color:var(--ok)}.rl.ko{color:var(--ko)}
+.btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.btns button{flex:1}
+.cd{border-top:1px solid var(--l);padding-top:8px;margin-top:8px}.cd>*{margin-bottom:6px}
+.ar{display:grid;grid-template-columns:1fr auto 3ch auto;gap:8px;align-items:center;margin:6px 0}.ar span{text-align:center;font-weight:600}
+#roll button{width:100%;margin-top:8px;font-size:16px}
+#toast{position:fixed;bottom:16px;left:50%;transform:translate(-50%,20px);background:var(--a);color:#1a1205;padding:8px 14px;border-radius:8px;opacity:0;pointer-events:none;transition:.2s;z-index:10}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#dice{position:fixed;inset:0;display:none;place-items:center;background:#000a;z-index:9;perspective:600px}#dice.on{display:grid}
+.dw{position:relative;width:130px;height:130px;display:grid;place-items:center}
+.die{position:absolute;inset:0;background:var(--a);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);animation:sp .7s linear infinite}
+#dn{position:relative;color:#1a1205;font:700 40px Spectral,serif}
+@keyframes sp{to{transform:rotate3d(1,1,.3,360deg)}}
+@media(prefers-reduced-motion:reduce){.die{animation:none}}
+</style></head><body>
+<div id="app"></div><div id="toast"></div>
+<div id="dice"><div class="dw"><i class="die"></i><b id="dn"></b></div></div>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LS=(k,v)=>v===undefined?JSON.parse(localStorage.getItem(k)||'null'):localStorage.setItem(k,JSON.stringify(v));
+let uid=LS('uid');if(!uid)LS('uid',uid=Math.random().toString(36).slice(2,10));
+const PV={openai:{n:'OpenAI',u:'https://api.openai.com/v1'},openrouter:{n:'OpenRouter',u:'https://openrouter.ai/api/v1'},anthropic:{n:'Anthropic (Claude)'},gemini:{n:'Google Gemini'},groq:{n:'Groq',u:'https://api.groq.com/openai/v1'},mistral:{n:'Mistral',u:'https://api.mistral.ai/v1'},deepseek:{n:'DeepSeek',u:'https://api.deepseek.com/v1'},xai:{n:'xAI (Grok)',u:'https://api.x.ai/v1'},together:{n:'Together',u:'https://api.together.xyz/v1'},custom:{n:'Outro (compatível com OpenAI)'}};
+let cfg=Object.assign({p:'openai',ks:{},m:'',u:'',ms:[]},LS('cfg')),nm=LS('nm')||'',tab='game',peer,hc,isHost=false,room='',conns={},mkey='',built=false,rolling=false;
+let S={phase:'lobby',world:{name:'',desc:'',power:'',attrs:'Força: dano físico e façanhas\nAgilidade: reflexos, furtividade, mira\nMente: magia, conhecimento, percepção\nPresença: carisma e vontade',pts:10,perLvl:3,init:'Agilidade',adv:''},cards:[],players:{},log:[],init:null,pend:null,busy:false};
+const K=()=>cfg.ks[cfg.p]||'',base=()=>cfg.p=='custom'?cfg.u.replace(/\/$/,''):PV[cfg.p].u;
+const toast=m=>{const t=$('#toast');t.textContent=m;t.className='on';clearTimeout(toast.i);toast.i=setTimeout(()=>t.className='',3500)};
+const pj=t=>{try{return JSON.parse(t.match(/\{[\s\S]*\}/)[0])}catch(e){return null}};
+const rd=(n,s)=>Array.from({length:n},()=>1+Math.floor(Math.random()*s));
+const attrs=()=>S.world.attrs.split('\n').map(l=>l.split(':')).filter(a=>a[0].trim()).map(a=>({n:a[0].trim(),d:a.slice(1).join(':').trim()}));
+const newSheet=()=>({lvl:1,hp:20,hpMax:20,pts:+S.world.pts||0,attrs:{},powers:[],concept:''});
+const sheet=()=>S.players[uid].sheet||(S.players[uid].sheet=newSheet());
+const bonus=(s,n)=>{const k=Object.keys(s.attrs||{}).find(a=>a.toLowerCase()==String(n||'').toLowerCase());return k?s.attrs[k]:0};
+const pn=i=>esc(S.players[i]?.name||'?');
+
+/* ---------- IA (chave só no navegador do mestre) ---------- */
+const AH=()=>({'x-api-key':K(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','content-type':'application/json'});
+async function jf(url,o){const r=await fetch(url,o),d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error?.message||JSON.stringify(d.error||d)||r.status);return d}
+async function listModels(){
+ if(cfg.p=='anthropic')return(await jf('https://api.anthropic.com/v1/models?limit=100',{headers:AH()})).data.map(x=>x.id);
+ if(cfg.p=='gemini')return(await jf(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${K()}`)).models.filter(x=>(x.supportedGenerationMethods||[]).includes('generateContent')).map(x=>x.name.replace('models/',''));
+ const r=await jf(base()+'/models',{headers:{Authorization:'Bearer '+K()}});return(r.data||r).map(x=>x.id).sort()}
+async function ai(system,user){
+ const m=cfg.m;if(!K()||!m)throw Error('configure provedor, chave e modelo na aba IA');
+ if(cfg.p=='anthropic')return(await jf('https://api.anthropic.com/v1/messages',{method:'POST',headers:AH(),body:JSON.stringify({model:m,max_tokens:1500,system,messages:[{role:'user',content:user}]})})).content.map(x=>x.text||'').join('');
+ if(cfg.p=='gemini')return(await jf(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${K()}`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:user}]}]})})).candidates[0].content.parts.map(x=>x.text||'').join('');
+ return(await jf(base()+'/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+K(),'content-type':'application/json'},body:JSON.stringify({model:m,messages:[{role:'system',content:system},{role:'user',content:user}]})})).choices[0].message.content}
+
+const sys=()=>{const w=S.world;return `Você é o narrador (mestre) de um RPG de mesa multiplayer, em português do Brasil. Narre de forma vívida e concisa (até 2 parágrafos) e nunca controle as ações dos personagens dos jogadores.
+MUNDO: ${w.name}. ${w.desc}
+SISTEMA DE PODER: ${w.power}
+ATRIBUTOS:\n${w.attrs}
+CARTÕES DE MEMÓRIA:\n${S.cards.map(c=>`- ${c.t}: ${c.x}`).join('\n')}
+AVENTURA: ${w.adv}
+REGRAS DE DADOS: se uma ação for incerta ou arriscada, NÃO resolva: peça rolagem. kind "check" = d20 + valor do atributo do personagem contra a CD (8 fácil, 12 média, 16 difícil, 20 muito difícil, 25 épica). kind "dice" = dano ou efeito em dados (ex.: "2d6"). Se o jogador usar um poder, peça primeiro um check do atributo do poder; após sucesso, peça kind "dice" com o dado do poder. Ações triviais: só narre. Nunca invente o resultado de dados. Use "scene":true ao começar uma cena importante (combate, confronto) para todos rolarem iniciativa.
+Responda SOMENTE com JSON: {"narration":"...","roll":null ou {"kind":"check"|"dice","stat":"atributo","dc":14,"dice":"2d6","why":"motivo curto"},"hp":[{"who":"Nome","delta":-3}],"cards":[{"title":"...","text":"..."}],"scene":false}. Em "cards" registre fatos novos importantes para lembrar depois.`};
+function ctx(){
+ const pl=Object.values(S.players).map(p=>{const s=p.sheet||{};return `- ${p.name} (nível ${s.lvl||1}, PV ${s.hp}/${s.hpMax}): ${s.concept||''}; atributos: ${Object.entries(s.attrs||{}).map(([k,v])=>k+' '+v).join(', ')}; poderes: ${(s.powers||[]).map(x=>`${x.n} [${x.dice}, ${x.stat}] ${x.d||''}`).join('; ')||'nenhum'}`}).join('\n'),T=S.init;
+ const o=T&&!T.rolling?`Iniciativa: ${T.order.map(i=>S.players[i].name).join(' → ')}. Turno atual: ${S.players[T.order[T.turn]].name}.`:'';
+ const lg=S.log.slice(-30).map(l=>({nar:'Narrador: '+l.x,say:S.players[l.w]?.name+' diz: '+l.x,act:S.players[l.w]?.name+' age: '+l.x,roll:'Dado: '+l.x}[l.k]||'')).filter(Boolean).join('\n');
+ return `PERSONAGENS:\n${pl}\n${o}\n\nHISTÓRICO:\n${lg}`}
+
+/* ---------- Lógica do jogo (só o mestre/host executa) ---------- */
+const sync=()=>{S.log=S.log.slice(-150);for(const c of Object.values(conns))c.open&&c.send({t:'S',S});render()};
+const tx=m=>isHost?handle(uid,m):hc?.open&&hc.send(m);
+function startInit(){S.init={order:[],turn:0,rolling:true,rolls:{}};S.log.push({k:'sys',x:'⚔ Cena importante! Todos rolam a iniciativa.'})}
+function chkInit(){const T=S.init;if(!T||!T.rolling)return;const on=Object.keys(S.players).filter(i=>S.players[i].on);if(on.length&&on.every(i=>i in T.rolls)){T.order=on.sort((a,b)=>T.rolls[b]-T.rolls[a]);T.rolling=false;T.turn=0;S.log.push({k:'sys',x:'Ordem: '+T.order.map(i=>S.players[i].name).join(' → ')})}}
+const adv=()=>{const T=S.init;if(T&&!T.rolling)T.turn=(T.turn+1)%T.order.length};
+function handle(u,d){
+ const P=S.players[u],T=S.init;if(!P)return;
+ if(d.t=='sheet')P.sheet=d.sheet;
+ else if(d.t=='say')S.log.push({k:'say',w:u,x:d.x});
+ else if(d.t=='act'&&S.phase=='play'&&!S.busy&&!S.pend&&(!T||(!T.rolling&&T.order[T.turn]==u))){S.log.push({k:'act',w:u,x:d.x});return narrate(u,`${P.name} age: ${d.x}`)}
+ else if(d.t=='roll'&&S.pend?.who==u&&!S.busy){const p=S.pend,ok=p.kind=='check'?d.total>=p.dc:null;S.pend=null;S.log.push({k:'roll',w:u,x:d.txt,ok});return narrate(u,`Resultado da rolagem de ${P.name}: ${d.txt}.${d.d==20?' (20 natural!)':d.d==1?' (1 natural!)':''}${ok===null?'':ok?' SUCESSO.':' FALHA.'} Narre a consequência.`)}
+ else if(d.t=='ini'&&T?.rolling&&!(u in T.rolls)){T.rolls[u]=d.v;S.log.push({k:'roll',w:u,x:'Iniciativa — '+d.txt});chkInit()}
+ else if(d.t=='pass'&&T&&!T.rolling&&!S.busy&&!S.pend&&(T.order[T.turn]==u||u==uid))adv();
+ sync()}
+async function narrate(actor,prompt){
+ S.busy=true;sync();
+ try{
+  const t=await ai(sys(),ctx()+'\n\n'+prompt),r=pj(t)||{narration:t};
+  if(r.narration)S.log.push({k:'nar',x:r.narration});
+  (r.hp||[]).forEach(h=>{const p=Object.values(S.players).find(p=>p.name.toLowerCase()==String(h.who).toLowerCase());if(p?.sheet)p.sheet.hp=Math.max(0,Math.min(p.sheet.hpMax,p.sheet.hp+(+h.delta||0)))});
+  (r.cards||[]).forEach(c=>c.title&&S.cards.push({t:c.title,x:c.text||''}));
+  if(r.roll&&actor)S.pend={who:actor,kind:r.roll.kind=='dice'?'dice':'check',stat:r.roll.stat,dc:+r.roll.dc||12,dice:r.roll.dice||'1d6',why:r.roll.why||''};
+  else if(r.scene)startInit();
+  else if(actor&&S.init&&!S.init.rolling)adv();
+ }catch(e){S.log.push({k:'sys',x:'Erro da IA: '+e.message})}
+ S.busy=false;sync()}
+async function gen(){
+ const idea=$('#idea').value.trim();if(!idea)return toast('Descreva a ideia do mundo.');toast('Gerando mundo…');
+ try{const r=pj(await ai('Você cria mundos de RPG de mesa em português do Brasil. Responda SOMENTE JSON: {"name":"","desc":"ambientação do mundo","power":"sistema de poder","attrs":"uma linha por atributo, formato Nome: para que serve (4 a 6 atributos)","pts":10,"perLvl":3,"init":"atributo usado na iniciativa"}','Ideia: '+idea));
+  if(!r)throw Error('resposta inválida');if(Array.isArray(r.attrs))r.attrs=r.attrs.map(a=>a.n?a.n+': '+(a.d||''):a).join('\n');
+  Object.assign(S.world,r);sync();render(1);toast('Mundo gerado!')}catch(e){toast('Erro: '+e.message)}}
+
+/* ---------- Rede P2P (PeerJS): o host é a "sala", ID = senha ---------- */
+function mkRoom(){
+ room=Math.random().toString(36).slice(2,8).toUpperCase();peer=new Peer('mesainf-'+room);
+ peer.on('error',e=>e.type=='unavailable-id'?mkRoom():toast('Erro de conexão: '+e.type));
+ peer.on('open',()=>{isHost=true;S.phase='setup';S.players[uid]={name:nm,on:true,sheet:newSheet()};tab=K()?'world':'ai';enter()});
+ peer.on('connection',c=>{
+  c.on('data',d=>{
+   if(d.t!='hi')return c.uid&&handle(c.uid,d);
+   const ex=S.players[d.uid];
+   if(!ex&&Object.keys(S.players).length>=4){c.send({t:'err',m:'Sala cheia (máx. 4 jogadores).'});return setTimeout(()=>c.close(),300)}
+   c.uid=d.uid;conns[d.uid]=c;S.players[d.uid]={...(ex||{sheet:newSheet()}),name:d.name,on:true};S.log.push({k:'sys',x:d.name+' entrou.'});sync()});
+  c.on('close',()=>{const p=S.players[c.uid];if(p&&conns[c.uid]==c){p.on=false;delete conns[c.uid];chkInit();sync()}})})}
+function joinRoom(id){
+ room=id.toUpperCase().trim();peer=new Peer();
+ peer.on('error',e=>toast(e.type=='peer-unavailable'?'Sala não encontrada.':'Erro de conexão: '+e.type));
+ peer.on('open',()=>{hc=peer.connect('mesainf-'+room,{reliable:true});
+  hc.on('open',()=>hc.send({t:'hi',uid,name:nm}));
+  hc.on('data',d=>{if(d.t=='err')toast(d.m);else if(d.t=='S'){S=d.S;built?render():enter()}});
+  hc.on('close',()=>toast('Conexão com a sala encerrada.'))})}
+
+/* ---------- Dados ---------- */
+async function spin(s,f){const o=$('#dice'),n=$('#dn'),w=ms=>new Promise(r=>setTimeout(r,ms));o.className='on';const iv=setInterval(()=>n.textContent=1+Math.floor(Math.random()*s),70);await w(1100);clearInterval(iv);n.textContent=f;await w(800);o.className=''}
+async function rollIt(){
+ if(rolling)return;rolling=true;const p=S.pend,s=sheet();
+ if(p.kind=='dice'){const[,n,f,k]=p.dice.match(/(\d+)\s*d\s*(\d+)\s*([+-]\s*\d+)?/)||[0,1,6],kk=+(k||'0').replace(/\s/g,''),v=rd(+n,+f),tot=v.reduce((a,b)=>a+b,0)+kk;await spin(+f,tot);tx({t:'roll',total:tot,txt:`${p.dice}: [${v}]${kk?(kk>0?'+':'')+kk:''} = ${tot}`})}
+ else{const b=bonus(s,p.stat),d=rd(1,20)[0],tot=d+b;await spin(20,d);tx({t:'roll',total:tot,d,txt:`d20 (${d}) ${b<0?'':'+'}${b} ${p.stat} = ${tot} vs CD ${p.dc}`})}
+ rolling=false}
+async function iniRoll(){if(rolling)return;rolling=true;const b=bonus(sheet(),S.world.init),d=rd(1,20)[0];await spin(20,d);tx({t:'ini',v:d+b,txt:`d20 (${d}) ${b<0?'':'+'}${b} = ${d+b}`});rolling=false}
+
+/* ---------- Telas ---------- */
+const lobby=()=>`<div class=card style="margin-top:8vh"><h1>Mesa Infinita</h1><p class=m>RPG de mesa narrado por IA. Até 4 jogadores por sala.</p>
+<label>Seu nome<input id=nm value="${esc(nm)}" maxlength=20></label><button id=bmk class=pri style="width:100%">Criar sala (sou o mestre)</button>
+<hr style="border-color:var(--l);margin:16px 0"><label>ID da sala<input id=rid maxlength=6 placeholder="ABC123" style="text-transform:uppercase"></label><button id=bjn style="width:100%">Entrar na sala</button></div>`;
+function enter(){$('#app').innerHTML='<div id=head></div><main id=main></main>';built=true;mkey='';render(1)}
+function head(){
+ const T=S.init,on=Object.values(S.players).filter(p=>p.on).length;
+ $('#head').innerHTML=`<header><h1>${esc(S.world.name||'Mesa Infinita')}</h1><button id=rc title="Copiar ID">Sala <b>${room}</b></button></header>
+<div>${Object.entries(S.players).map(([i,p])=>`<span class="chip ${p.on?'':'off'}">${esc(p.name)}${i==uid?' (você)':''}${p.sheet?` · PV ${p.sheet.hp}/${p.sheet.hpMax}`:''}</span>`).join('')}</div>
+<nav>${[['game','Jogo'],['world','Mundo'],['sheet','Ficha'],...(isHost?[['ai','IA']]:[])].map(([k,n])=>`<button data-tab=${k} class="${tab==k?'on':''}">${n}</button>`).join('')}</nav>
+${!T?'':T.rolling?`<div class=ib>Iniciativa: ${Object.keys(T.rolls).length}/${on} rolaram</div>`:`<div class=ib>${T.order.map((i,k)=>`<span class="chip ${k==T.turn?'cur':''}">${pn(i)} <i>${T.rolls[i]}</i></span>`).join('')}</div>`}`}
+function render(f){
+ if(!built)return;head();
+ const ed=document.activeElement,m=$('#main');
+ if(tab!='game'&&!f&&ed&&m.contains(ed)&&/INPUT|TEXTAREA|SELECT/.test(ed.tagName))return;
+ if(tab=='game'){if(mkey!='game'){m.innerHTML=gameHTML();mkey='game'}gameUpdate()}
+ else{m.innerHTML={world:worldHTML,sheet:sheetHTML,ai:aiHTML}[tab]();mkey=tab}}
+const gameHTML=()=>`<div id=log class=log></div><div id=roll></div><div class=card><div id=st class=m></div>
+<select id=pw style="margin:6px 0"></select><textarea id=tx rows=2 placeholder="O que você faz ou diz?"></textarea>
+<div class=btns><button id=bact class=pri>Agir</button><button id=bsay>Falar</button><button id=bpass hidden>Passar turno</button></div>
+${isHost?'<div class=btns><button id=bscene>⚔ Nova cena (iniciativa)</button><button id=bend>Encerrar cena</button></div>':''}</div>`;
+const logHTML=l=>l.k=='nar'?`<p class=nar>${esc(l.x)}</p>`:l.k=='act'?`<p class=act><b>${pn(l.w)}</b> ${esc(l.x)}</p>`:l.k=='say'?`<p class=say><b>${pn(l.w)}:</b> ${esc(l.x)}</p>`:l.k=='roll'?`<p class="rl ${l.ok===true?'ok':l.ok===false?'ko':''}">🎲 ${pn(l.w)} — ${esc(l.x)}</p>`:`<p class=m>${esc(l.x)}</p>`;
+function gameUpdate(){
+ const T=S.init,p=S.pend,play=S.phase=='play',me=S.players[uid],turn=!T||(!T.rolling&&T.order[T.turn]==uid),lg=$('#log');
+ lg.innerHTML=S.log.map(logHTML).join('')||'<p class=m>Aguardando o mestre começar a aventura.</p>';lg.scrollTop=1e9;
+ $('#st').textContent=!play?'Aguardando o mestre iniciar a aventura.':S.busy?'O narrador está pensando…':p?(p.who==uid?'Role o dado!':'Aguardando '+S.players[p.who]?.name+' rolar.'):T?.rolling?'Cena importante: role a iniciativa.':turn?(T?'Seu turno — descreva sua ação.':'Descreva sua ação.'):'Turno de '+S.players[T.order[T.turn]]?.name+'. Você pode falar à vontade.';
+ $('#bact').disabled=!(play&&!S.busy&&!p&&turn);$('#bpass').hidden=!(T&&!T.rolling&&(T.order[T.turn]==uid||isHost));
+ const po='<option value="">Sem poder</option>'+(me.sheet?.powers||[]).map((x,i)=>`<option value=${i}>${esc(x.n||'Poder '+(i+1))} (${esc(x.dice)})</option>`).join(''),pw=$('#pw');
+ if(pw.dataset.h!=po){const v=pw.value;pw.innerHTML=po;pw.value=v;pw.dataset.h=po}
+ const s=me.sheet||newSheet();
+ $('#roll').innerHTML=p&&p.who==uid?`<button class=pri id=broll>🎲 Rolar ${p.kind=='dice'?esc(p.dice):`d20 ${bonus(s,p.stat)<0?'':'+'}${bonus(s,p.stat)} (${esc(p.stat)}) vs CD ${p.dc}`}</button><small class=m>${esc(p.why)}</small>`
+  :T?.rolling?(uid in T.rolls?'<p class=m>Aguardando os outros rolarem a iniciativa…</p>':`<button class=pri id=bini>🎲 Rolar iniciativa</button>`):''}
+function worldHTML(){
+ const w=S.world,H=isHost,d=H?'':'disabled';
+ return `<div class=card>${H?'<label>Ideia do mundo<textarea id=idea rows=2 placeholder="Ex.: cidade flutuante movida por vapor mágico, onde cada pessoa nasce com uma marca de poder"></textarea></label><button id=gen class=pri>✨ Gerar mundo com IA</button>':''}
+<label>Nome<input data-w=name value="${esc(w.name)}" ${d}></label>
+<label>Descrição do mundo<textarea rows=5 data-w=desc ${d}>${esc(w.desc)}</textarea></label>
+<label>Sistema de poder<textarea rows=4 data-w=power ${d}>${esc(w.power)}</textarea></label>
+<label>Atributos (um por linha — Nome: para que serve)<textarea rows=5 data-w=attrs ${d}>${esc(w.attrs)}</textarea></label>
+<div class=two><label>Pontos iniciais<input type=number data-w=pts value=${w.pts} ${d}></label><label>Pontos por nível<input type=number data-w=perLvl value=${w.perLvl} ${d}></label></div>
+<label>Atributo da iniciativa<input data-w=init value="${esc(w.init)}" ${d}></label>
+<label>Aventura inicial<textarea rows=3 data-w=adv ${d}>${esc(w.adv)}</textarea></label></div>
+<div class=card><h3>Cartões de mundo (memórias)</h3>${S.cards.map((c,i)=>`<div class=cd><input data-c="${i}.t" value="${esc(c.t)}" ${d}><textarea rows=2 data-c="${i}.x" ${d}>${esc(c.x)}</textarea>${H?`<button data-delc=${i}>remover</button>`:''}</div>`).join('')||'<p class=m>Nenhum cartão ainda. A IA também cria cartões durante o jogo.</p>'}
+${H?'<button id=addc>+ Cartão</button>':''}</div>${H&&S.phase!='play'?'<button id=bstart class=pri style="width:100%">▶ Começar aventura</button>':''}`}
+function sheetHTML(){
+ const s=sheet(),A=attrs();
+ return `<div class=card><h3>${esc(S.players[uid].name)}</h3><label>Conceito do personagem<input data-s=concept value="${esc(s.concept)}"></label>
+<div class=two><label>PV atual<input type=number data-s=hp value=${s.hp}></label><label>PV máximo<input type=number data-s=hpMax value=${s.hpMax}></label></div>
+<p>Nível <b>${s.lvl}</b> · Pontos livres: <b>${s.pts}</b> <button id=lvl>+ nível (+${S.world.perLvl} pts)</button></p>
+${A.map(a=>`<div class=ar><div><b>${esc(a.n)}</b><br><small class=m>${esc(a.d)}</small></div><button data-a="${esc(a.n)}" data-d=-1>−</button><span>${s.attrs[a.n]||0}</span><button data-a="${esc(a.n)}" data-d=1>+</button></div>`).join('')}</div>
+<div class=card><h3>Poderes</h3>${s.powers.map((p,i)=>`<div class=cd><div class=two><input data-pw="${i}.n" placeholder="Nome" value="${esc(p.n)}"><input data-pw="${i}.dice" placeholder="Dano (ex.: 2d6+1)" value="${esc(p.dice)}"></div><select data-pw="${i}.stat">${A.map(a=>`<option ${a.n==p.stat?'selected':''}>${esc(a.n)}</option>`).join('')}</select><textarea rows=2 data-pw="${i}.d" placeholder="O que faz">${esc(p.d)}</textarea><button data-delp=${i}>remover</button></div>`).join('')}<button id=addp>+ Poder</button></div>`}
+const aiHTML=()=>`<div class=card><label>Provedor<select data-cf=p>${Object.entries(PV).map(([k,v])=>`<option value=${k} ${cfg.p==k?'selected':''}>${v.n}</option>`).join('')}</select></label>
+${cfg.p=='custom'?`<label>URL base (ex.: https://meu-servidor/v1)<input data-cf=u value="${esc(cfg.u)}"></label>`:''}
+<label>Chave de API<input type=password data-cf=k value="${esc(K())}" autocomplete=off></label><button id=loadm>Carregar modelos</button>
+<label>Modelo<select data-cf=m>${(cfg.ms.length?cfg.ms:cfg.m?[cfg.m]:[]).map(x=>`<option ${x==cfg.m?'selected':''}>${esc(x)}</option>`).join('')}</select></label>
+<small class=m>A chave fica só neste navegador. Só o mestre chama a IA; os outros jogadores não precisam de chave.</small></div>`;
+
+/* ---------- Eventos ---------- */
+document.addEventListener('click',async e=>{
+ const b=e.target.closest('button');if(!b)return;const id=b.id,d=b.dataset;
+ if(id=='bmk'||id=='bjn'){nm=$('#nm').value.trim();if(!nm)return toast('Digite seu nome.');LS('nm',nm);if(id=='bmk')mkRoom();else{const r=$('#rid').value.trim();if(r)joinRoom(r)}}
+ else if(d.tab){tab=d.tab;mkey='';render(1)}
+ else if(id=='rc'){navigator.clipboard?.writeText(room);toast('ID copiado: '+room)}
+ else if(id=='bsay'){const x=$('#tx').value.trim();if(x){tx({t:'say',x});$('#tx').value=''}}
+ else if(id=='bact'){const x=$('#tx').value.trim(),po=S.players[uid].sheet?.powers[$('#pw').value];if(!x&&!po)return;tx({t:'act',x:(po?`[usa o poder ${po.n}: dano ${po.dice}, atributo ${po.stat}] `:'')+x});$('#tx').value=''}
+ else if(id=='bpass')tx({t:'pass'})
+ else if(id=='broll')rollIt()
+ else if(id=='bini')iniRoll()
+ else if(id=='bscene'&&!S.busy){startInit();sync()}
+ else if(id=='bend'){S.init=null;sync()}
+ else if(id=='gen')gen()
+ else if(id=='bstart'){Object.values(S.players).forEach(p=>{const s=p.sheet;if(s&&s.lvl==1&&!Object.values(s.attrs).some(v=>v))s.pts=+S.world.pts||0});S.phase='play';S.init=null;tab='game';mkey='';narrate(null,'Comece a aventura com a cena de abertura.')}
+ else if(id=='addc'){S.cards.push({t:'Novo cartão',x:''});sync();render(1)}
+ else if(d.delc){S.cards.splice(+d.delc,1);sync();render(1)}
+ else if(id=='loadm'){try{cfg.ms=await listModels();if(!cfg.ms.includes(cfg.m))cfg.m=cfg.ms[0]||'';LS('cfg',cfg);render(1);toast(cfg.ms.length+' modelos carregados')}catch(e){toast('Erro: '+e.message)}}
+ else if(d.a){const s=sheet(),n=d.a;s.attrs[n]=s.attrs[n]||0;if(+d.d>0&&s.pts>0){s.attrs[n]++;s.pts--}else if(+d.d<0&&s.attrs[n]>0){s.attrs[n]--;s.pts++}save(1)}
+ else if(id=='lvl'){const s=sheet();s.lvl++;s.pts+=+S.world.perLvl||0;save(1)}
+ else if(id=='addp'){sheet().powers.push({n:'',dice:'1d8',stat:attrs()[0]?.n||'',d:''});save(1)}
+ else if(d.delp){sheet().powers.splice(+d.delp,1);save(1)}
+});
+const save=r=>{tx({t:'sheet',sheet:sheet()});if(r)render(1)};
+document.addEventListener('change',e=>{
+ const t=e.target,d=t.dataset,v=t.type=='number'?+t.value:t.value;
+ if(d.w){S.world[d.w]=v;sync()}
+ else if(d.c){const[i,f]=d.c.split('.');S.cards[i][f]=v;sync()}
+ else if(d.s){sheet()[d.s]=v;save()}
+ else if(d.pw){const[i,f]=d.pw.split('.');sheet().powers[i][f]=v;save()}
+ else if(d.cf){if(d.cf=='k')cfg.ks[cfg.p]=v;else{cfg[d.cf]=v;if(d.cf=='p'){cfg.ms=[];cfg.m=''}}LS('cfg',cfg);if(d.cf=='p')render(1)}
+});
+$('#app').innerHTML=lobby();
+</script></body></html>
