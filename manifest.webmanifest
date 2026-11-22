@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "Taverna20",
+  "short_name": "Taverna20",
+  "description": "RPG de mesa online com fichas, dados e mapa de batalha.",
+  "lang": "pt-BR",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#121a24",
+  "theme_color": "#121a24",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
